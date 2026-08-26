@@ -1,0 +1,11 @@
+{
+  "name": "forms-geo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node --check src/main.js && node --check src/steps.js && node --check src/components.js && node --check src/validation.js && node --check src/services/externalSystemApi.js",
+    "test": "node scripts/self-check.mjs"
+  }
+}
