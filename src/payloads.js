@@ -1,15 +1,13 @@
 import { PROCESS_TYPES } from "./constants.js";
-import { cleanText } from "./utils.js";
+import { cleanText, onlyDigits } from "./utils.js";
 
 export function buildNewProcessPayload(state) {
-  const type = state.vehicle.type === "Outro" ? "Outro" : state.vehicle.type;
-  const faces = state.vehicle.faces === "Outro" ? "Outro" : state.vehicle.faces;
-
   return {
     tipoProcesso: PROCESS_TYPES.NEW,
     email: cleanText(state.email),
     requerente: {
       empresa: cleanText(state.applicant.company),
+      cnpj: onlyDigits(state.applicant.cnpj),
       inscricaoMunicipal: cleanText(state.applicant.municipalRegistration),
     },
     localInstalacao: {
@@ -18,14 +16,10 @@ export function buildNewProcessPayload(state) {
       endereco: cleanText(state.location.address),
     },
     veiculoDivulgacao: {
-      tipo: type,
-      tipoOutro:
-        state.vehicle.type === "Outro" ? cleanText(state.vehicle.typeOther) : null,
-      quantidadeFaces: faces,
-      quantidadeFacesOutro:
-        state.vehicle.faces === "Outro"
-          ? cleanText(state.vehicle.facesOther)
-          : null,
+      tipo: state.vehicle.type,
+      tipoOutro: null,
+      quantidadeFaces: state.vehicle.faces,
+      quantidadeFacesOutro: null,
     },
   };
 }

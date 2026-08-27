@@ -13,6 +13,7 @@ import {
   renderSection,
   renderTextInput,
 } from "./components.js";
+import { formatCnpj } from "./utils.js";
 
 const required = '<span class="required-mark">*</span>';
 
@@ -79,6 +80,16 @@ export function renderApplicantStep(state, errors) {
         value: state.applicant.company,
       }),
       error: errors["applicant.company"],
+    })}
+    ${renderQuestion({
+      title: `CNPJ da empresa ${required}`,
+      control: renderTextInput({
+        path: "applicant.cnpj",
+        value: formatCnpj(state.applicant.cnpj),
+        inputMode: "numeric",
+        maxLength: 18,
+      }),
+      error: errors["applicant.cnpj"],
     })}
     ${renderQuestion({
       title: `Inscrição Municipal da empresa ${required}`,
@@ -149,10 +160,8 @@ export function renderVehicleStep(state, errors) {
         name: "vehicle.type",
         value: state.vehicle.type,
         options: VEHICLE_TYPES,
-        otherPath: "vehicle.typeOther",
-        otherValue: state.vehicle.typeOther,
       }),
-      error: errors["vehicle.type"] || errors["vehicle.typeOther"],
+      error: errors["vehicle.type"],
     })}
   `;
 }
@@ -169,10 +178,8 @@ export function renderDocumentsStep(state, errors) {
           name: "vehicle.faces",
           value: state.vehicle.faces,
           options: FACE_OPTIONS,
-          otherPath: "vehicle.facesOther",
-          otherValue: state.vehicle.facesOther,
         }),
-        error: errors["vehicle.faces"] || errors["vehicle.facesOther"],
+        error: errors["vehicle.faces"],
       }),
     )}
     ${renderQuestion({

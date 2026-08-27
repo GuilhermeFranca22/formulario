@@ -21,7 +21,7 @@ import {
   submitNewProcess,
   submitRequirementResponse,
 } from "./services/externalSystemApi.js";
-import { escapeHtml, getByPath, setByPath } from "./utils.js";
+import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 
 const app = document.querySelector("#app");
@@ -194,6 +194,11 @@ function bindEvents() {
         event.currentTarget.value = value;
       }
 
+      if (path === "applicant.cnpj") {
+        value = onlyDigits(value).slice(0, 14);
+        event.currentTarget.value = formatCnpj(value);
+      }
+
       setByPath(state, path, value);
       delete errors[path];
       submitError = "";
@@ -212,9 +217,6 @@ function bindEvents() {
         if (value === PROCESS_TYPES.NEW) clearRequirementResponseData(state);
         if (value === PROCESS_TYPES.REQUIREMENT_RESPONSE) clearNewProcessData(state);
       }
-
-      if (path === "vehicle.type" && value !== "Outro") state.vehicle.typeOther = "";
-      if (path === "vehicle.faces" && value !== "Outro") state.vehicle.facesOther = "";
 
       delete errors[path];
       submitError = "";

@@ -4,6 +4,7 @@ export function createInitialState() {
     processType: "",
     applicant: {
       company: "",
+      cnpj: "",
       municipalRegistration: "",
     },
     location: {
@@ -13,9 +14,7 @@ export function createInitialState() {
     },
     vehicle: {
       type: "",
-      typeOther: "",
       faces: "",
-      facesOther: "",
     },
     acknowledgement: false,
     requirementResponse: {
@@ -38,6 +37,7 @@ export function createInitialState() {
 export function clearNewProcessData(state) {
   state.applicant = {
     company: "",
+    cnpj: "",
     municipalRegistration: "",
   };
   state.location = {
@@ -47,9 +47,7 @@ export function clearNewProcessData(state) {
   };
   state.vehicle = {
     type: "",
-    typeOther: "",
     faces: "",
-    facesOther: "",
   };
   state.acknowledgement = false;
   state.files.alvaraLocalizacao = [];

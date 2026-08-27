@@ -53,7 +53,21 @@ export function renderInlineQuestion({ title, description = "", control, error =
   `;
 }
 
-export function renderTextInput({ path, value, placeholder = "Sua resposta", type = "text" }) {
+export function renderTextInput({
+  path,
+  value,
+  placeholder = "Sua resposta",
+  type = "text",
+  inputMode = "",
+  maxLength = "",
+}) {
+  const inputModeAttribute = inputMode
+    ? `inputmode="${escapeHtml(inputMode)}"`
+    : "";
+  const maxLengthAttribute = maxLength
+    ? `maxlength="${escapeHtml(maxLength)}"`
+    : "";
+
   return `
     <input
       class="text-input"
@@ -61,6 +75,8 @@ export function renderTextInput({ path, value, placeholder = "Sua resposta", typ
       value="${escapeHtml(value)}"
       placeholder="${escapeHtml(placeholder)}"
       data-field="${escapeHtml(path)}"
+      ${inputModeAttribute}
+      ${maxLengthAttribute}
     />
   `;
 }

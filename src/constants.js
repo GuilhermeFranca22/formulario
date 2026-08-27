@@ -14,10 +14,9 @@ export const VEHICLE_TYPES = [
   "Painel Eletrônico Modular",
   "Painel Eletrônico Modular - Pequeno Porte",
   "Empena Eletrônica",
-  "Outro",
 ];
 
-export const FACE_OPTIONS = ["Uma", "Duas", "Três", "Quatro", "Outro"];
+export const FACE_OPTIONS = ["Uma", "Duas", "Três", "Quatro"];
 
 export const LINKS = {
   checklist:

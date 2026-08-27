@@ -1,5 +1,5 @@
 import { FILE_RULES, PROCESS_TYPES } from "./constants.js";
-import { cleanText } from "./utils.js";
+import { cleanText, onlyDigits } from "./utils.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".heic", ".heif"];
@@ -66,6 +66,7 @@ export function validateStep(step, state) {
 
   if (step === "applicant") {
     const company = required(state.applicant.company);
+    const cnpj = onlyDigits(state.applicant.cnpj);
     const municipalRegistration = required(state.applicant.municipalRegistration);
     const alvara = validateFileGroup(
       state.files.alvaraLocalizacao,
@@ -73,6 +74,11 @@ export function validateStep(step, state) {
     );
 
     if (company) errors["applicant.company"] = company;
+    if (!cnpj) {
+      errors["applicant.cnpj"] = "Informe o CNPJ da empresa.";
+    } else if (!/^\d{14}$/.test(cnpj)) {
+      errors["applicant.cnpj"] = "O CNPJ deve conter exatamente 14 números.";
+    }
     if (municipalRegistration) {
       errors["applicant.municipalRegistration"] = municipalRegistration;
     }
@@ -98,22 +104,11 @@ export function validateStep(step, state) {
   if (step === "vehicle") {
     const type = required(state.vehicle.type, "Escolha o tipo de veículo.");
     if (type) errors["vehicle.type"] = type;
-    if (state.vehicle.type === "Outro") {
-      const typeOther = required(state.vehicle.typeOther, "Informe o tipo de veículo.");
-      if (typeOther) errors["vehicle.typeOther"] = typeOther;
-    }
   }
 
   if (step === "documents") {
     const faces = required(state.vehicle.faces, "Informe a quantidade de faces.");
     if (faces) errors["vehicle.faces"] = faces;
-    if (state.vehicle.faces === "Outro") {
-      const facesOther = required(
-        state.vehicle.facesOther,
-        "Informe a quantidade de faces.",
-      );
-      if (facesOther) errors["vehicle.facesOther"] = facesOther;
-    }
 
     [
       "requerimentoPadrao",
