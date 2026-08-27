@@ -3,18 +3,16 @@ export const FORM_TITLE =
 
 export const PROCESS_TYPES = {
   NEW: "PROCESSO_NOVO",
-  REQUIREMENT_RESPONSE: "RESPOSTA_COMUNICADO",
 };
 
 export const VEHICLE_TYPES = [
-  "Outdoor",
-  "Painel Iluminado - Front Light",
-  "Painel Iluminado - Triface",
-  "Empena",
-  "Painel Eletrônico Modular",
-  "Painel Eletrônico Modular - Pequeno Porte",
-  "Empena Eletrônica",
-  "Outro",
+  { label: "Outdoor", value: "outdoor" },
+  { label: "Painel Iluminado - Front Light", value: "front light" },
+  { label: "Painel Iluminado - Triface", value: "triface" },
+  { label: "Empena", value: "empena" },
+  { label: "Painel Eletrônico Modular", value: "painel eletronico modular" },
+  { label: "Painel Eletrônico Modular - Pequeno Porte", value: "painel de led" },
+  { label: "Empena Eletrônica", value: "empena de led" },
 ];
 
 export const FACE_OPTIONS = ["Uma", "Duas", "Três", "Quatro", "Outro"];
@@ -73,12 +71,6 @@ export const FILE_RULES = {
     maxFiles: 5,
     maxSizeMB: 10,
     types: ["pdf"],
-    required: true,
-  },
-  documentos: {
-    maxFiles: 10,
-    maxSizeMB: 10,
-    types: ["pdf", "image"],
     required: true,
   },
 };

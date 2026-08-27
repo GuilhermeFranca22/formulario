@@ -2,7 +2,6 @@ import {
   FACE_OPTIONS,
   FILE_RULES,
   LINKS,
-  PROCESS_TYPES,
   VEHICLE_TYPES,
 } from "./constants.js";
 import {
@@ -32,9 +31,8 @@ export function renderIntroCopy() {
     </div>
   `;
 }
-
 export function renderIntroStep(state, errors) {
-  return renderQuestion({
+  return `${renderQuestion({
     title: `E-mail ${required}`,
     control: renderTextInput({
       path: "email",
@@ -43,30 +41,12 @@ export function renderIntroStep(state, errors) {
       type: "email",
     }),
     error: errors.email,
-  });
-}
-
-export function renderProcessTypeStep(state, errors) {
-  return `
-    ${renderSection(
-      "Selecione o tipo de processo",
-      renderInlineQuestion({
-        title: `Selecione o tipo processo ${required}`,
-        control: renderRadioGroup({
-          name: "processType",
-          value: state.processType,
-          options: [
-            { label: "Processo novo", value: PROCESS_TYPES.NEW },
-            {
-              label: "Resposta de comunicado de exigência",
-              value: PROCESS_TYPES.REQUIREMENT_RESPONSE,
-            },
-          ],
-        }),
-        error: errors.processType,
-      }),
-    )}
-  `;
+  })}
+  <div class="honeypot" aria-hidden="true">
+    <label>Não preencha este campo
+      <input type="text" data-field="website" value="${state.website}" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>`;
 }
 
 export function renderApplicantStep(state, errors) {
@@ -99,7 +79,6 @@ export function renderApplicantStep(state, errors) {
     })}
   `;
 }
-
 export function renderLocationStep(state, errors) {
   return `
     ${renderSection("Local de Instalação do veículo de divulgação", "")}
@@ -116,20 +95,56 @@ export function renderLocationStep(state, errors) {
     ${renderQuestion({
       title: `Coordenadas Geográficas ${required}`,
       description:
-        "Insira as coordenadas no formato DMS (graus, minutos e segundos). Ex.: 20°27'28.2\"S 54°36'23.5\"W",
-      control: renderTextInput({
-        path: "location.coordinates",
-        value: state.location.coordinates,
-      }),
-      error: errors["location.coordinates"],
+        "Use o botão para captar a localização ou informe latitude e longitude em graus decimais.",
+      control: `<button class="file-button" type="button" data-action="capture-location">Captar localização atual</button>`,
     })}
     ${renderQuestion({
-      title: `Endereço do local de instalação ${required}`,
+      title: `Latitude ${required}`,
       control: renderTextInput({
-        path: "location.address",
-        value: state.location.address,
+        path: "location.latitude",
+        value: state.location.latitude,
+        type: "number",
+        step: "any",
+        min: "-20.65",
+        max: "-20.30",
       }),
-      error: errors["location.address"],
+      error: errors["location.latitude"],
+    })}
+    ${renderQuestion({
+      title: `Longitude ${required}`,
+      control: renderTextInput({
+        path: "location.longitude",
+        value: state.location.longitude,
+        type: "number",
+        step: "any",
+        min: "-54.80",
+        max: "-54.40",
+      }),
+      error: errors["location.longitude"],
+    })}
+    ${renderQuestion({
+      title: `Rua ${required}`,
+      control: renderTextInput({ path: "location.street", value: state.location.street }),
+      error: errors["location.street"],
+    })}
+    ${renderQuestion({
+      title: `Número ${required}`,
+      control: renderTextInput({ path: "location.number", value: state.location.number }),
+      error: errors["location.number"],
+    })}
+    ${renderQuestion({
+      title: `Bairro ${required}`,
+      control: renderTextInput({ path: "location.district", value: state.location.district }),
+      error: errors["location.district"],
+    })}
+    ${renderQuestion({
+      title: `CEP ${required}`,
+      control: renderTextInput({
+        path: "location.postalCode",
+        value: state.location.postalCode,
+        placeholder: "00000-000",
+      }),
+      error: errors["location.postalCode"],
     })}
   `;
 }
@@ -149,10 +164,30 @@ export function renderVehicleStep(state, errors) {
         name: "vehicle.type",
         value: state.vehicle.type,
         options: VEHICLE_TYPES,
-        otherPath: "vehicle.typeOther",
-        otherValue: state.vehicle.typeOther,
       }),
-      error: errors["vehicle.type"] || errors["vehicle.typeOther"],
+      error: errors["vehicle.type"],
+    })}
+    ${renderQuestion({
+      title: `Área do veículo (m²) ${required}`,
+      control: renderTextInput({
+        path: "vehicle.areaM2",
+        value: state.vehicle.areaM2,
+        type: "number",
+        step: "0.01",
+        min: "0.01",
+      }),
+      error: errors["vehicle.areaM2"],
+    })}
+    ${renderQuestion({
+      title: `Altura da borda inferior (m) ${required}`,
+      control: renderTextInput({
+        path: "vehicle.bottomHeightM",
+        value: state.vehicle.bottomHeightM,
+        type: "number",
+        step: "0.01",
+        min: "0",
+      }),
+      error: errors["vehicle.bottomHeightM"],
     })}
   `;
 }
@@ -258,37 +293,6 @@ export function renderAcknowledgementStep(state, errors) {
         </div>
       `,
       error: errors.acknowledgement,
-    })}
-  `;
-}
-
-export function renderRequirementResponseStep(state, errors) {
-  return `
-    ${renderSection("Resposta de Comunicado de Exigência", "")}
-    ${renderQuestion({
-      title: `Informe o número do processo ${required}`,
-      control: renderTextInput({
-        path: "requirementResponse.processNumber",
-        value: state.requirementResponse.processNumber,
-      }),
-      error: errors["requirementResponse.processNumber"],
-    })}
-    ${renderQuestion({
-      title: `Informe o número do comunicado de Exigência ${required}`,
-      control: renderTextInput({
-        path: "requirementResponse.noticeNumber",
-        value: state.requirementResponse.noticeNumber,
-      }),
-      error: errors["requirementResponse.noticeNumber"],
-    })}
-    ${renderQuestion({
-      title: `Anexe os documentos ${required}`,
-      control: renderFileUpload({
-        key: "documentos",
-        files: state.files.documentos,
-        rules: FILE_RULES.documentos,
-        error: errors["files.documentos"],
-      }),
     })}
   `;
 }

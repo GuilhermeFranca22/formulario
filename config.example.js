@@ -1,7 +1,6 @@
 window.FORMS_GEO_CONFIG = {
-  externalSystemApiUrl: "https://api.exemplo.gov.br",
+  externalSystemApiUrl: "https://geomidia-api.exemplo.gov.br/api",
   endpoints: {
-    newProcess: "/solicitacoes/veiculos-divulgacao",
-    requirementResponse: "/solicitacoes/veiculos-divulgacao/respostas-comunicado",
+    newProcess: "/public/solicitacoes/veiculos-divulgacao",
   },
 };

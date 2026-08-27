@@ -1,4 +1,3 @@
-import { PROCESS_TYPES } from "./constants.js";
 import { renderHeader, renderNavigation } from "./components.js";
 import {
   renderAcknowledgementStep,
@@ -7,20 +6,11 @@ import {
   renderIntroCopy,
   renderIntroStep,
   renderLocationStep,
-  renderProcessTypeStep,
-  renderRequirementResponseStep,
   renderVehicleStep,
 } from "./steps.js";
-import {
-  clearNewProcessData,
-  clearRequirementResponseData,
-  createInitialState,
-} from "./state.js";
-import { buildNewProcessPayload, buildRequirementResponsePayload } from "./payloads.js";
-import {
-  submitNewProcess,
-  submitRequirementResponse,
-} from "./services/externalSystemApi.js";
+import { createInitialState } from "./state.js";
+import { buildNewProcessPayload } from "./payloads.js";
+import { submitNewProcess } from "./services/externalSystemApi.js";
 import { escapeHtml, getByPath, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 
@@ -34,36 +24,16 @@ let success = null;
 let isSubmitting = false;
 
 function getFlow() {
-  if (state.processType === PROCESS_TYPES.NEW) {
-    return [
-      "intro",
-      "processType",
-      "applicant",
-      "location",
-      "vehicle",
-      "documents",
-      "acknowledgement",
-    ];
-  }
-
-  if (state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE) {
-    return ["intro", "processType", "requirementResponse"];
-  }
-
-  return ["intro", "processType"];
+  return ["intro", "applicant", "location", "vehicle", "documents", "acknowledgement"];
 }
 
 function stepContent(step) {
   if (step === "intro") return renderIntroStep(state, errors);
-  if (step === "processType") return renderProcessTypeStep(state, errors);
   if (step === "applicant") return renderApplicantStep(state, errors);
   if (step === "location") return renderLocationStep(state, errors);
   if (step === "vehicle") return renderVehicleStep(state, errors);
   if (step === "documents") return renderDocumentsStep(state, errors);
   if (step === "acknowledgement") return renderAcknowledgementStep(state, errors);
-  if (step === "requirementResponse") {
-    return renderRequirementResponseStep(state, errors);
-  }
   return "";
 }
 
@@ -159,10 +129,7 @@ async function submit() {
   render();
 
   try {
-    success =
-      state.processType === PROCESS_TYPES.NEW
-        ? await submitNewProcess(state)
-        : await submitRequirementResponse(state);
+    success = await submitNewProcess(state);
   } catch (error) {
     submitError =
       error?.message ||
@@ -181,6 +148,31 @@ function resetForm() {
   success = null;
   isSubmitting = false;
   render();
+}
+
+function captureLocation() {
+  if (!navigator.geolocation) {
+    submitError = "Este navegador não permite captar a localização.";
+    render();
+    return;
+  }
+  submitError = "Aguardando a localização do dispositivo...";
+  render();
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      state.location.latitude = position.coords.latitude.toFixed(6);
+      state.location.longitude = position.coords.longitude.toFixed(6);
+      submitError = "";
+      delete errors["location.latitude"];
+      delete errors["location.longitude"];
+      render();
+    },
+    (error) => {
+      submitError = `Não foi possível captar a localização: ${error.message}`;
+      render();
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+  );
 }
 
 function bindEvents() {
@@ -204,16 +196,7 @@ function bindEvents() {
     input.addEventListener("change", (event) => {
       const path = event.currentTarget.dataset.radio;
       const value = event.currentTarget.value;
-      const previousProcessType = state.processType;
-
       setByPath(state, path, value);
-
-      if (path === "processType" && value !== previousProcessType) {
-        if (value === PROCESS_TYPES.NEW) clearRequirementResponseData(state);
-        if (value === PROCESS_TYPES.REQUIREMENT_RESPONSE) clearNewProcessData(state);
-      }
-
-      if (path === "vehicle.type" && value !== "Outro") state.vehicle.typeOther = "";
       if (path === "vehicle.faces" && value !== "Outro") state.vehicle.facesOther = "";
 
       delete errors[path];
@@ -265,6 +248,7 @@ function bindEvents() {
       if (action === "next") goNext();
       if (action === "back") goBack();
       if (action === "submit") submit();
+      if (action === "capture-location") captureLocation();
       if (action === "new-request") resetForm();
       if (action === "clear" && window.confirm("Limpar todas as respostas?")) {
         resetForm();
@@ -276,7 +260,6 @@ function bindEvents() {
 window.FORMS_GEO_DEBUG = {
   getState: () => state,
   buildNewProcessPayload: () => buildNewProcessPayload(state),
-  buildRequirementResponsePayload: () => buildRequirementResponsePayload(state),
 };
 
 render();

@@ -26,6 +26,14 @@ body {
   line-height: 1.42;
 }
 
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 a {
   color: #0645d9;
   overflow-wrap: anywhere;

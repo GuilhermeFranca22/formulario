@@ -1,12 +1,15 @@
-import {
-  buildNewProcessPayload,
-  buildRequirementResponsePayload,
-} from "../payloads.js";
+import { buildNewProcessPayload } from "../payloads.js";
 
-const DEFAULT_ENDPOINTS = {
-  newProcess: "/solicitacoes/veiculos-divulgacao",
-  requirementResponse: "/solicitacoes/veiculos-divulgacao/respostas-comunicado",
-};
+const DEFAULT_ENDPOINT = "/public/solicitacoes/veiculos-divulgacao";
+const FILE_CATEGORIES = [
+  "alvaraLocalizacao",
+  "requerimentoPadrao",
+  "autorizacaoProprietario",
+  "documentoProprietario",
+  "projetoEstrutural",
+  "projetoImplantacao",
+  "artRrt",
+];
 
 class ApiError extends Error {
   constructor(message, details) {
@@ -20,87 +23,119 @@ function getConfig() {
   return window.FORMS_GEO_CONFIG ?? {};
 }
 
-function buildUrl(pathKey) {
+function buildUrl(path = "") {
   const config = getConfig();
-  const path = config.endpoints?.[pathKey] ?? DEFAULT_ENDPOINTS[pathKey];
-  const baseUrl = config.externalSystemApiUrl ?? "";
-
-  if (!baseUrl && window.location.protocol === "file:") {
-    throw new ApiError(
-      "A URL da API externa não está configurada. Abra a página via servidor web ou configure FORMS_GEO_CONFIG.externalSystemApiUrl.",
-    );
+  const baseUrl = String(config.externalSystemApiUrl ?? "").replace(/\/$/, "");
+  const endpoint = config.endpoints?.newProcess ?? DEFAULT_ENDPOINT;
+  if (!baseUrl) {
+    throw new ApiError("A integração com o GeoMídia ainda não está configurada.");
   }
-
-  return `${baseUrl}${path}`;
+  return `${baseUrl}${endpoint}${path}`;
 }
 
-function appendPayload(formData, payload) {
-  formData.append(
-    "payload",
-    new Blob([JSON.stringify(payload)], { type: "application/json" }),
-  );
+async function responseBody(response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  return contentType.includes("application/json")
+    ? response.json().catch(() => null)
+    : response.text().catch(() => "");
 }
 
-function appendFiles(formData, field, files) {
-  files.forEach((file) => {
-    formData.append(field, file, file.name);
-  });
-}
-
-async function postMultipart(url, formData) {
+async function postJson(url, body) {
   let response;
-
   try {
     response = await fetch(url, {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
   } catch {
     throw new ApiError(
-      "Não foi possível conectar ao sistema externo. Tente novamente em alguns instantes.",
+      "Não foi possível conectar ao GeoMídia. Tente novamente em alguns instantes.",
     );
   }
 
-  const contentType = response.headers.get("content-type") ?? "";
-  const body = contentType.includes("application/json")
-    ? await response.json().catch(() => null)
-    : await response.text().catch(() => "");
-
+  const bodyResponse = await responseBody(response);
   if (!response.ok) {
+    const detail = bodyResponse?.detail;
     const message =
-      body?.message ||
-      body?.error ||
-      "O sistema externo recusou o envio. Revise os dados e tente novamente.";
-    throw new ApiError(message, body);
+      (typeof detail === "string" && detail) ||
+      bodyResponse?.message ||
+      bodyResponse?.error ||
+      "O GeoMídia recusou o envio. Revise os dados e tente novamente.";
+    throw new ApiError(message, bodyResponse);
   }
+  return bodyResponse;
+}
 
-  return typeof body === "object" && body !== null
-    ? body
-    : { success: true, message: body || "Solicitação enviada com sucesso." };
+function normalizedContentType(file) {
+  if (file.type) return file.type;
+  const extension = file.name.toLowerCase().split(".").pop();
+  const types = {
+    pdf: "application/pdf",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    bmp: "image/bmp",
+    heic: "image/heic",
+    heif: "image/heif",
+  };
+  return types[extension] ?? "application/octet-stream";
+}
+
+function collectFiles(state) {
+  return FILE_CATEGORIES.flatMap((category) =>
+    state.files[category].map((file, index) => ({
+      clientId: `${category}:${index}`,
+      category,
+      file,
+    })),
+  );
+}
+
+async function uploadFile(signedUrl, file) {
+  const data = new FormData();
+  data.append("cacheControl", "3600");
+  data.append("", file, file.name);
+  let response;
+  try {
+    response = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "x-upsert": "false" },
+      body: data,
+    });
+  } catch {
+    throw new ApiError(`Não foi possível enviar o arquivo ${file.name}.`);
+  }
+  if (!response.ok) {
+    throw new ApiError(`O arquivo ${file.name} foi recusado pelo armazenamento.`);
+  }
 }
 
 export async function submitNewProcess(state) {
-  const formData = new FormData();
-  appendPayload(formData, buildNewProcessPayload(state));
-  appendFiles(formData, "alvaraLocalizacao", state.files.alvaraLocalizacao);
-  appendFiles(formData, "requerimentoPadrao", state.files.requerimentoPadrao);
-  appendFiles(
-    formData,
-    "autorizacaoProprietario",
-    state.files.autorizacaoProprietario,
+  const files = collectFiles(state);
+  const initiated = await postJson(buildUrl("/iniciar"), {
+    payload: buildNewProcessPayload(state),
+    arquivos: files.map(({ clientId, category, file }) => ({
+      idCliente: clientId,
+      categoria: category,
+      nome: file.name,
+      tipoConteudo: normalizedContentType(file),
+      tamanhoBytes: file.size,
+    })),
+  });
+
+  const filesById = new Map(files.map((item) => [item.clientId, item.file]));
+  await Promise.all(
+    initiated.envios.map((target) => {
+      const file = filesById.get(target.idCliente);
+      if (!file) throw new ApiError("O GeoMídia devolveu um anexo desconhecido.");
+      return uploadFile(target.urlAssinada, file);
+    }),
   );
-  appendFiles(formData, "documentoProprietario", state.files.documentoProprietario);
-  appendFiles(formData, "projetoEstrutural", state.files.projetoEstrutural);
-  appendFiles(formData, "projetoImplantacao", state.files.projetoImplantacao);
-  appendFiles(formData, "artRrt", state.files.artRrt);
 
-  return postMultipart(buildUrl("newProcess"), formData);
-}
-
-export async function submitRequirementResponse(state) {
-  const formData = new FormData();
-  appendPayload(formData, buildRequirementResponsePayload(state));
-  appendFiles(formData, "documentos", state.files.documentos);
-
-  return postMultipart(buildUrl("requirementResponse"), formData);
+  return postJson(buildUrl(`/${encodeURIComponent(initiated.rascunhoId)}/finalizar`), {
+    token: initiated.token,
+  });
 }
