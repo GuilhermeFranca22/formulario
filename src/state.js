@@ -1,7 +1,9 @@
 export function createInitialState() {
   return {
     email: "",
-    processType: "",
+    processType: "PROCESSO_NOVO",
+    startedAt: new Date().toISOString(),
+    website: "",
     applicant: {
       company: "",
       cnpj: "",
@@ -9,18 +11,20 @@ export function createInitialState() {
     },
     location: {
       realEstateRegistration: "",
-      coordinates: "",
-      address: "",
+      latitude: "",
+      longitude: "",
+      street: "",
+      number: "",
+      district: "",
+      postalCode: "",
     },
     vehicle: {
       type: "",
       faces: "",
+      areaM2: "",
+      bottomHeightM: "",
     },
     acknowledgement: false,
-    requirementResponse: {
-      processNumber: "",
-      noticeNumber: "",
-    },
     files: {
       alvaraLocalizacao: [],
       requerimentoPadrao: [],
@@ -29,7 +33,6 @@ export function createInitialState() {
       projetoEstrutural: [],
       projetoImplantacao: [],
       artRrt: [],
-      documentos: [],
     },
   };
 }
@@ -42,12 +45,18 @@ export function clearNewProcessData(state) {
   };
   state.location = {
     realEstateRegistration: "",
-    coordinates: "",
-    address: "",
+    latitude: "",
+    longitude: "",
+    street: "",
+    number: "",
+    district: "",
+    postalCode: "",
   };
   state.vehicle = {
     type: "",
     faces: "",
+    areaM2: "",
+    bottomHeightM: "",
   };
   state.acknowledgement = false;
   state.files.alvaraLocalizacao = [];
@@ -57,12 +66,4 @@ export function clearNewProcessData(state) {
   state.files.projetoEstrutural = [];
   state.files.projetoImplantacao = [];
   state.files.artRrt = [];
-}
-
-export function clearRequirementResponseData(state) {
-  state.requirementResponse = {
-    processNumber: "",
-    noticeNumber: "",
-  };
-  state.files.documentos = [];
 }

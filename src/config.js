@@ -1,7 +1,8 @@
+const deployedApiUrl = "__FORM_API_URL__";
+
 window.FORMS_GEO_CONFIG = window.FORMS_GEO_CONFIG ?? {
-  externalSystemApiUrl: "",
+  externalSystemApiUrl: deployedApiUrl.startsWith("__") ? "" : deployedApiUrl,
   endpoints: {
-    newProcess: "/solicitacoes/veiculos-divulgacao",
-    requirementResponse: "/solicitacoes/veiculos-divulgacao/respostas-comunicado",
+    newProcess: "/public/solicitacoes/veiculos-divulgacao",
   },
 };

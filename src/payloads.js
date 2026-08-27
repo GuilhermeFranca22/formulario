@@ -12,23 +12,21 @@ export function buildNewProcessPayload(state) {
     },
     localInstalacao: {
       inscricaoImobiliaria: cleanText(state.location.realEstateRegistration),
-      coordenadas: cleanText(state.location.coordinates),
-      endereco: cleanText(state.location.address),
+      latitude: Number(state.location.latitude),
+      longitude: Number(state.location.longitude),
+      rua: cleanText(state.location.street),
+      numero: cleanText(state.location.number),
+      bairro: cleanText(state.location.district),
+      cep: cleanText(state.location.postalCode),
     },
     veiculoDivulgacao: {
       tipo: state.vehicle.type,
-      tipoOutro: null,
       quantidadeFaces: state.vehicle.faces,
-      quantidadeFacesOutro: null,
+      areaM2: Number(state.vehicle.areaM2),
+      alturaBordaInferiorM: Number(state.vehicle.bottomHeightM),
     },
-  };
-}
-
-export function buildRequirementResponsePayload(state) {
-  return {
-    tipoProcesso: PROCESS_TYPES.REQUIREMENT_RESPONSE,
-    email: cleanText(state.email),
-    numeroProcesso: cleanText(state.requirementResponse.processNumber),
-    numeroComunicado: cleanText(state.requirementResponse.noticeNumber),
+    ciente: state.acknowledgement,
+    iniciadoEm: state.startedAt,
+    website: cleanText(state.website),
   };
 }

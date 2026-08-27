@@ -1,4 +1,4 @@
-import { FILE_RULES, PROCESS_TYPES } from "./constants.js";
+import { FILE_RULES } from "./constants.js";
 import { cleanText, onlyDigits } from "./utils.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +19,9 @@ function fileTypeIsAllowed(file, allowedTypes) {
   const name = file.name.toLowerCase();
   const extension = name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
   const isPdf = file.type === "application/pdf" || extension === ".pdf";
-  const isImage = file.type.startsWith("image/") || IMAGE_EXTENSIONS.includes(extension);
+  const isImage =
+    IMAGE_EXTENSIONS.includes(extension) &&
+    (file.type.startsWith("image/") || !file.type);
 
   return (
     (allowedTypes.includes("pdf") && isPdf) ||
@@ -59,11 +61,6 @@ export function validateStep(step, state) {
     if (message) errors.email = message;
   }
 
-  if (step === "processType") {
-    const message = required(state.processType, "Selecione o tipo de processo.");
-    if (message) errors.processType = message;
-  }
-
   if (step === "applicant") {
     const company = required(state.applicant.company);
     const cnpj = onlyDigits(state.applicant.cnpj);
@@ -87,8 +84,8 @@ export function validateStep(step, state) {
 
   if (step === "location") {
     const registration = cleanText(state.location.realEstateRegistration);
-    const coordinates = required(state.location.coordinates);
-    const address = required(state.location.address);
+    const latitude = Number(state.location.latitude);
+    const longitude = Number(state.location.longitude);
 
     if (!registration) {
       errors["location.realEstateRegistration"] = "Informe a inscrição imobiliária.";
@@ -97,13 +94,33 @@ export function validateStep(step, state) {
         "A inscrição imobiliária deve conter exatamente 11 números.";
     }
 
-    if (coordinates) errors["location.coordinates"] = coordinates;
-    if (address) errors["location.address"] = address;
+    if (!cleanText(state.location.latitude) || latitude < -20.65 || latitude > -20.3) {
+      errors["location.latitude"] = "Informe uma latitude válida dentro de Campo Grande.";
+    }
+    if (!cleanText(state.location.longitude) || longitude < -54.8 || longitude > -54.4) {
+      errors["location.longitude"] = "Informe uma longitude válida dentro de Campo Grande.";
+    }
+    ["street", "number", "district", "postalCode"].forEach((field) => {
+      const message = required(state.location[field]);
+      if (message) errors[`location.${field}`] = message;
+    });
+    if (
+      cleanText(state.location.postalCode) &&
+      !/^\d{5}-?\d{3}$/.test(cleanText(state.location.postalCode))
+    ) {
+      errors["location.postalCode"] = "Informe um CEP válido.";
+    }
   }
 
   if (step === "vehicle") {
     const type = required(state.vehicle.type, "Escolha o tipo de veículo.");
     if (type) errors["vehicle.type"] = type;
+    if (!cleanText(state.vehicle.areaM2) || Number(state.vehicle.areaM2) <= 0) {
+      errors["vehicle.areaM2"] = "Informe uma área maior que zero.";
+    }
+    if (!cleanText(state.vehicle.bottomHeightM) || Number(state.vehicle.bottomHeightM) < 0) {
+      errors["vehicle.bottomHeightM"] = "Informe uma altura igual ou maior que zero.";
+    }
   }
 
   if (step === "documents") {
@@ -127,32 +144,18 @@ export function validateStep(step, state) {
     errors.acknowledgement = "Marque a confirmação para enviar.";
   }
 
-  if (step === "requirementResponse") {
-    const processNumber = required(state.requirementResponse.processNumber);
-    const noticeNumber = required(state.requirementResponse.noticeNumber);
-    const documents = validateFileGroup(state.files.documentos, FILE_RULES.documentos);
-
-    if (processNumber) errors["requirementResponse.processNumber"] = processNumber;
-    if (noticeNumber) errors["requirementResponse.noticeNumber"] = noticeNumber;
-    if (documents) errors["files.documentos"] = documents;
-  }
-
   return errors;
 }
 
 export function validateAll(state) {
-  const steps =
-    state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE
-      ? ["intro", "processType", "requirementResponse"]
-      : [
-          "intro",
-          "processType",
-          "applicant",
-          "location",
-          "vehicle",
-          "documents",
-          "acknowledgement",
-        ];
+  const steps = [
+    "intro",
+    "applicant",
+    "location",
+    "vehicle",
+    "documents",
+    "acknowledgement",
+  ];
 
   return steps.reduce(
     (allErrors, step) => ({ ...allErrors, ...validateStep(step, state) }),

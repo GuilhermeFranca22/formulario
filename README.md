@@ -40,12 +40,19 @@ A integração fica em `src/services/externalSystemApi.js`. Para configurar a UR
 
 ```js
 window.FORMS_GEO_CONFIG = {
-  externalSystemApiUrl: "https://api.seu-sistema.gov.br",
+  externalSystemApiUrl: "https://api.seu-sistema.gov.br/api",
   endpoints: {
-    newProcess: "/solicitacoes/veiculos-divulgacao",
-    requirementResponse: "/solicitacoes/veiculos-divulgacao/respostas-comunicado",
+    newProcess: "/public/solicitacoes/veiculos-divulgacao",
   },
 };
 ```
 
 Nenhuma credencial sensível deve ser enviada no JavaScript do navegador.
+
+Na Vercel, configure a variável de build abaixo e publique novamente:
+
+```text
+FORM_API_URL=https://URL-DA-API.vercel.app/api
+```
+
+O fluxo implementado nesta versão contempla somente **Processo novo**. Os anexos são enviados diretamente para URLs temporárias do armazenamento privado e, após a confirmação, a API devolve o protocolo criado no GeoMídia.

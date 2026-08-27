@@ -12,10 +12,10 @@ export function renderHeader(state, introHtml = "") {
       </div>
       <div class="account-row">
         <span><span class="account-row__email">${escapeHtml(email)}</span> <a href="#" aria-label="Mudar conta">Mudar de conta</a></span>
-        ${cloudIcon()}
+      ${cloudIcon()}
       </div>
       <div class="upload-note">
-        O nome, a foto e o e-mail associados à sua Conta do Google serão registrados quando você fizer upload de arquivos e enviar este formulário.
+        Os dados e documentos enviados serão usados exclusivamente para instrução e análise desta solicitação.
       </div>
       <div class="required-note">* Indica uma pergunta obrigatória</div>
     </section>
@@ -58,25 +58,24 @@ export function renderTextInput({
   value,
   placeholder = "Sua resposta",
   type = "text",
+  step = "",
+  min = "",
+  max = "",
   inputMode = "",
   maxLength = "",
 }) {
-  const inputModeAttribute = inputMode
-    ? `inputmode="${escapeHtml(inputMode)}"`
-    : "";
-  const maxLengthAttribute = maxLength
-    ? `maxlength="${escapeHtml(maxLength)}"`
-    : "";
-
   return `
     <input
       class="text-input"
       type="${type}"
+      ${step ? `step="${escapeHtml(step)}"` : ""}
+      ${min ? `min="${escapeHtml(min)}"` : ""}
+      ${max ? `max="${escapeHtml(max)}"` : ""}
+      ${inputMode ? `inputmode="${escapeHtml(inputMode)}"` : ""}
+      ${maxLength ? `maxlength="${escapeHtml(maxLength)}"` : ""}
       value="${escapeHtml(value)}"
       placeholder="${escapeHtml(placeholder)}"
       data-field="${escapeHtml(path)}"
-      ${inputModeAttribute}
-      ${maxLengthAttribute}
     />
   `;
 }
