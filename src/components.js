@@ -61,6 +61,8 @@ export function renderTextInput({
   step = "",
   min = "",
   max = "",
+  inputMode = "",
+  maxLength = "",
 }) {
   return `
     <input
@@ -69,6 +71,8 @@ export function renderTextInput({
       ${step ? `step="${escapeHtml(step)}"` : ""}
       ${min ? `min="${escapeHtml(min)}"` : ""}
       ${max ? `max="${escapeHtml(max)}"` : ""}
+      ${inputMode ? `inputmode="${escapeHtml(inputMode)}"` : ""}
+      ${maxLength ? `maxlength="${escapeHtml(maxLength)}"` : ""}
       value="${escapeHtml(value)}"
       placeholder="${escapeHtml(placeholder)}"
       data-field="${escapeHtml(path)}"

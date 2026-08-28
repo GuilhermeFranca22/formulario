@@ -1,5 +1,5 @@
 import { PROCESS_TYPES } from "./constants.js";
-import { cleanText } from "./utils.js";
+import { cleanText, onlyDigits } from "./utils.js";
 
 export function buildNewProcessPayload(state) {
   return {
@@ -7,6 +7,7 @@ export function buildNewProcessPayload(state) {
     email: cleanText(state.email),
     requerente: {
       empresa: cleanText(state.applicant.company),
+      cnpj: onlyDigits(state.applicant.cnpj),
       inscricaoMunicipal: cleanText(state.applicant.municipalRegistration),
     },
     localInstalacao: {
@@ -20,10 +21,7 @@ export function buildNewProcessPayload(state) {
     },
     veiculoDivulgacao: {
       tipo: state.vehicle.type,
-      quantidadeFaces:
-        state.vehicle.faces === "Outro"
-          ? cleanText(state.vehicle.facesOther)
-          : state.vehicle.faces,
+      quantidadeFaces: state.vehicle.faces,
       areaM2: Number(state.vehicle.areaM2),
       alturaBordaInferiorM: Number(state.vehicle.bottomHeightM),
     },

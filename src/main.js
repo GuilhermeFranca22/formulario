@@ -11,7 +11,7 @@ import {
 import { createInitialState } from "./state.js";
 import { buildNewProcessPayload } from "./payloads.js";
 import { submitNewProcess } from "./services/externalSystemApi.js";
-import { escapeHtml, getByPath, setByPath } from "./utils.js";
+import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 
 const app = document.querySelector("#app");
@@ -186,6 +186,11 @@ function bindEvents() {
         event.currentTarget.value = value;
       }
 
+      if (path === "applicant.cnpj") {
+        value = onlyDigits(value).slice(0, 14);
+        event.currentTarget.value = formatCnpj(value);
+      }
+
       setByPath(state, path, value);
       delete errors[path];
       submitError = "";
@@ -197,7 +202,6 @@ function bindEvents() {
       const path = event.currentTarget.dataset.radio;
       const value = event.currentTarget.value;
       setByPath(state, path, value);
-      if (path === "vehicle.faces" && value !== "Outro") state.vehicle.facesOther = "";
 
       delete errors[path];
       submitError = "";

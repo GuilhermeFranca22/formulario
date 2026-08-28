@@ -15,7 +15,7 @@ export const VEHICLE_TYPES = [
   { label: "Empena Eletrônica", value: "empena de led" },
 ];
 
-export const FACE_OPTIONS = ["Uma", "Duas", "Três", "Quatro", "Outro"];
+export const FACE_OPTIONS = ["Uma", "Duas", "Três", "Quatro"];
 
 export const LINKS = {
   checklist:

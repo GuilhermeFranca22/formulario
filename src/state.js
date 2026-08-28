@@ -6,6 +6,7 @@ export function createInitialState() {
     website: "",
     applicant: {
       company: "",
+      cnpj: "",
       municipalRegistration: "",
     },
     location: {
@@ -20,7 +21,6 @@ export function createInitialState() {
     vehicle: {
       type: "",
       faces: "",
-      facesOther: "",
       areaM2: "",
       bottomHeightM: "",
     },
@@ -40,6 +40,7 @@ export function createInitialState() {
 export function clearNewProcessData(state) {
   state.applicant = {
     company: "",
+    cnpj: "",
     municipalRegistration: "",
   };
   state.location = {
@@ -54,7 +55,6 @@ export function clearNewProcessData(state) {
   state.vehicle = {
     type: "",
     faces: "",
-    facesOther: "",
     areaM2: "",
     bottomHeightM: "",
   };
