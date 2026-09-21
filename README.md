@@ -52,7 +52,10 @@ Nenhuma credencial sensível deve ser enviada no JavaScript do navegador.
 Na Vercel, configure a variável de build abaixo e publique novamente:
 
 ```text
-FORM_API_URL=https://URL-DA-API.vercel.app/api
+FORM_API_URL=https://geomidia-back.vercel.app/api
 ```
+
+Essa variável deve ser configurada nos ambientes da Vercel que publicarão o formulário. O domínio público
+definitivo do formulário também deve constar em `CORS_ORIGINS` e `PUBLIC_FORM_ORIGINS` no deployment do backend.
 
 O fluxo implementado nesta versão contempla somente **Processo novo**. Os anexos são enviados diretamente para URLs temporárias do armazenamento privado e, após a confirmação, a API devolve o protocolo criado no GeoMídia.
