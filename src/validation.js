@@ -1,4 +1,5 @@
 import { FILE_RULES } from "./constants.js";
+import { isInsideCampoGrande } from "./campoGrandeBoundary.js";
 import { cleanText, onlyDigits } from "./utils.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,11 +95,22 @@ export function validateStep(step, state) {
         "A inscrição imobiliária deve conter exatamente 11 números.";
     }
 
-    if (!cleanText(state.location.latitude) || latitude < -20.65 || latitude > -20.3) {
-      errors["location.latitude"] = "Informe uma latitude válida dentro de Campo Grande.";
+    if (!cleanText(state.location.latitude) || !Number.isFinite(latitude)) {
+      errors["location.latitude"] = "Informe uma latitude válida.";
     }
-    if (!cleanText(state.location.longitude) || longitude < -54.8 || longitude > -54.4) {
-      errors["location.longitude"] = "Informe uma longitude válida dentro de Campo Grande.";
+    if (!cleanText(state.location.longitude) || !Number.isFinite(longitude)) {
+      errors["location.longitude"] = "Informe uma longitude válida.";
+    }
+    if (
+      !errors["location.latitude"] &&
+      !errors["location.longitude"] &&
+      !isInsideCampoGrande(latitude, longitude)
+    ) {
+      errors["location.latitude"] = "O ponto indicado está fora do município de Campo Grande.";
+      errors["location.longitude"] = "Confira o marcador no mapa e corrija as coordenadas.";
+    }
+    if (!errors["location.latitude"] && !errors["location.longitude"] && !state.locationConfirmed) {
+      errors.locationConfirmed = "Confirme o ponto indicado no mapa antes de avançar.";
     }
     ["street", "number", "district", "postalCode"].forEach((field) => {
       const message = required(state.location[field]);

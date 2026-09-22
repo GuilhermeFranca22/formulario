@@ -56,6 +56,34 @@ a {
   box-shadow: var(--shadow);
 }
 
+.location-map {
+  width: 100%;
+  height: 360px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #eef3f7;
+  z-index: 0;
+}
+
+.location-map-status {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.location-map-status--valid {
+  color: #137333;
+}
+
+.location-map-status--invalid {
+  color: var(--danger);
+}
+
+.location-map-status--neutral {
+  color: var(--muted);
+}
+
 .form-header {
   margin: 0 0 12px;
   overflow: hidden;
@@ -456,5 +484,9 @@ input:focus-visible {
 
   .file-item {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .location-map {
+    height: 300px;
   }
 }

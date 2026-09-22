@@ -18,6 +18,7 @@ export function createInitialState() {
       district: "",
       postalCode: "",
     },
+    locationConfirmed: false,
     vehicle: {
       type: "",
       faces: "",
@@ -52,6 +53,7 @@ export function clearNewProcessData(state) {
     district: "",
     postalCode: "",
   };
+  state.locationConfirmed = false;
   state.vehicle = {
     type: "",
     faces: "",

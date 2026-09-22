@@ -116,8 +116,6 @@ export function renderLocationStep(state, errors) {
         value: state.location.latitude,
         type: "number",
         step: "any",
-        min: "-20.65",
-        max: "-20.30",
       }),
       error: errors["location.latitude"],
     })}
@@ -128,11 +126,20 @@ export function renderLocationStep(state, errors) {
         value: state.location.longitude,
         type: "number",
         step: "any",
-        min: "-54.80",
-        max: "-54.40",
       }),
       error: errors["location.longitude"],
     })}
+    <section class="question-card location-map-card">
+      <p class="question-title">Confira o ponto no mapa ${required}</p>
+      <p class="field-description">Clique no mapa ou arraste o marcador para corrigir a localização. A área azul representa o limite oficial do município.</p>
+      <div id="location-map" class="location-map" aria-label="Mapa para conferência da localização"></div>
+      <p id="location-map-status" class="location-map-status" role="status"></p>
+      <label class="checkbox-row location-confirmation">
+        <input type="checkbox" data-checkbox="locationConfirmed" ${state.locationConfirmed ? "checked" : ""} />
+        <span>Confirmo que o marcador corresponde ao local da instalação.</span>
+      </label>
+      ${errors.locationConfirmed ? `<p class="error-text">${errors.locationConfirmed}</p>` : ""}
+    </section>
     ${renderQuestion({
       title: `Rua ${required}`,
       control: renderTextInput({ path: "location.street", value: state.location.street }),

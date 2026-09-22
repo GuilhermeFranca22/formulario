@@ -13,6 +13,7 @@ import { buildNewProcessPayload } from "./payloads.js";
 import { submitNewProcess } from "./services/externalSystemApi.js";
 import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
+import { CAMPO_GRANDE_BOUNDARY, isInsideCampoGrande } from "./campoGrandeBoundary.js";
 
 const app = document.querySelector("#app");
 
@@ -22,6 +23,70 @@ let errors = {};
 let submitError = "";
 let success = null;
 let isSubmitting = false;
+let locationMap = null;
+let locationMarker = null;
+let locationBoundary = null;
+
+function destroyLocationMap() {
+  if (locationMap) locationMap.remove();
+  locationMap = null;
+  locationMarker = null;
+  locationBoundary = null;
+}
+
+function coordinates() {
+  const latitude = Number(state.location.latitude);
+  const longitude = Number(state.location.longitude);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null;
+}
+
+function updateLocationMap() {
+  if (!locationMap) return;
+  const status = document.querySelector("#location-map-status");
+  const point = coordinates();
+  if (!point) {
+    if (locationMarker) { locationMap.removeLayer(locationMarker); locationMarker = null; }
+    if (status) { status.textContent = "Informe latitude e longitude para visualizar o ponto."; status.className = "location-map-status"; }
+    return;
+  }
+  const inside = isInsideCampoGrande(point.latitude, point.longitude);
+  const latLng = [point.latitude, point.longitude];
+  if (!locationMarker) {
+    locationMarker = window.L.marker(latLng, { draggable: true }).addTo(locationMap);
+    locationMarker.on("dragend", (event) => {
+      const position = event.target.getLatLng();
+      state.location.latitude = position.lat.toFixed(6);
+      state.location.longitude = position.lng.toFixed(6);
+      state.locationConfirmed = false;
+      render();
+    });
+  } else locationMarker.setLatLng(latLng);
+  if (status) {
+    status.textContent = inside
+      ? (state.locationConfirmed ? "Ponto confirmado dentro do município." : "Ponto dentro do município. Marque a confirmação abaixo.")
+      : "Ponto fora do limite oficial de Campo Grande.";
+    status.className = `location-map-status ${inside ? "location-map-status--valid" : "location-map-status--invalid"}`;
+  }
+}
+
+function initLocationMap() {
+  const element = document.querySelector("#location-map");
+  if (!element || !window.L) return;
+  const center = [-20.4697, -54.6201];
+  locationMap = window.L.map(element).setView(center, 11);
+  window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(locationMap);
+  const polygon = CAMPO_GRANDE_BOUNDARY.map(([longitude, latitude]) => [latitude, longitude]);
+  locationBoundary = window.L.polygon(polygon, { color: "#1a73e8", fillColor: "#1a73e8", fillOpacity: 0.12, weight: 2 }).addTo(locationMap);
+  locationMap.fitBounds(locationBoundary.getBounds(), { padding: [12, 12] });
+  locationMap.on("click", (event) => {
+    if (!isInsideCampoGrande(event.latlng.lat, event.latlng.lng)) return;
+    state.location.latitude = event.latlng.lat.toFixed(6);
+    state.location.longitude = event.latlng.lng.toFixed(6);
+    state.locationConfirmed = false;
+    render();
+  });
+  updateLocationMap();
+}
 
 function getFlow() {
   return ["intro", "applicant", "location", "vehicle", "documents", "acknowledgement"];
@@ -60,6 +125,7 @@ function currentSubmitDisabled() {
 }
 
 function render() {
+  destroyLocationMap();
   if (success) {
     renderSuccess();
     bindEvents();
@@ -86,6 +152,7 @@ function render() {
     })}
   `;
   bindEvents();
+  if (currentStep === "location") initLocationMap();
 }
 
 function markStepErrors(step = currentStep) {
@@ -162,6 +229,7 @@ function captureLocation() {
     (position) => {
       state.location.latitude = position.coords.latitude.toFixed(6);
       state.location.longitude = position.coords.longitude.toFixed(6);
+      state.locationConfirmed = false;
       submitError = "";
       delete errors["location.latitude"];
       delete errors["location.longitude"];
@@ -192,6 +260,10 @@ function bindEvents() {
       }
 
       setByPath(state, path, value);
+      if (path === "location.latitude" || path === "location.longitude") {
+        state.locationConfirmed = false;
+        updateLocationMap();
+      }
       delete errors[path];
       submitError = "";
     });

@@ -19,6 +19,7 @@ newProcess.location.street = "Avenida Afonso Pena";
 newProcess.location.number = "1000";
 newProcess.location.district = "Centro";
 newProcess.location.postalCode = "79002-000";
+newProcess.locationConfirmed = true;
 newProcess.vehicle.type = "outdoor";
 newProcess.vehicle.faces = "Uma";
 newProcess.vehicle.areaM2 = "12";
