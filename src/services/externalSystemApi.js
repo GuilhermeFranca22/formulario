@@ -1,4 +1,4 @@
-import { buildNewProcessPayload } from "../payloads.js";
+import { buildNewProcessPayload, buildRequirementResponsePayload } from "../payloads.js";
 
 const DEFAULT_ENDPOINT = "/public/solicitacoes/veiculos-divulgacao";
 const FILE_CATEGORIES = [
@@ -23,10 +23,11 @@ function getConfig() {
   return window.FORMS_GEO_CONFIG ?? {};
 }
 
-function buildUrl(path = "") {
+function buildUrl(path = "", endpointName = "newProcess") {
   const config = getConfig();
   const baseUrl = String(config.externalSystemApiUrl ?? "").replace(/\/$/, "");
-  const endpoint = config.endpoints?.newProcess ?? DEFAULT_ENDPOINT;
+  const endpoint = config.endpoints?.[endpointName] ??
+    (endpointName === "requirementResponse" ? `${DEFAULT_ENDPOINT}/exigencias` : DEFAULT_ENDPOINT);
   if (!baseUrl) {
     throw new ApiError("A integração com o GeoMídia ainda não está configurada.");
   }
@@ -135,7 +136,76 @@ export async function submitNewProcess(state) {
     }),
   );
 
-  return postJson(buildUrl(`/${encodeURIComponent(initiated.rascunhoId)}/finalizar`), {
+  const result = await postJson(buildUrl(`/${encodeURIComponent(initiated.rascunhoId)}/finalizar`), {
     token: initiated.token,
   });
+  return {
+    ...result,
+    receiptDraftId: initiated.rascunhoId,
+    receiptToken: initiated.token,
+    receiptEndpoint: "newProcess",
+  };
+}
+
+export async function submitRequirementResponse(state) {
+  const files = state.files.respostaExigencia.map((file, index) => ({
+    clientId: `respostaExigencia:${index}`,
+    category: "respostaExigencia",
+    file,
+  }));
+  const initiated = await postJson(buildUrl("/iniciar", "requirementResponse"), {
+    payload: buildRequirementResponsePayload(state),
+    arquivos: files.map(({ clientId, category, file }) => ({
+      idCliente: clientId,
+      categoria: category,
+      nome: file.name,
+      tipoConteudo: normalizedContentType(file),
+      tamanhoBytes: file.size,
+    })),
+  });
+  const filesById = new Map(files.map((item) => [item.clientId, item.file]));
+  await Promise.all(initiated.envios.map((target) => {
+    const file = filesById.get(target.idCliente);
+    if (!file) throw new ApiError("O GeoMídia devolveu um anexo desconhecido.");
+    return uploadFile(target.urlAssinada, file);
+  }));
+  const result = await postJson(
+    buildUrl(`/${encodeURIComponent(initiated.rascunhoId)}/finalizar`, "requirementResponse"),
+    { token: initiated.token },
+  );
+  return {
+    ...result,
+    receiptDraftId: initiated.rascunhoId,
+    receiptToken: initiated.token,
+    receiptEndpoint: "requirementResponse",
+  };
+}
+
+export async function downloadReceipt(result) {
+  let response;
+  try {
+    response = await fetch(
+      buildUrl(`/${encodeURIComponent(result.receiptDraftId)}/comprovante`, result.receiptEndpoint),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: result.receiptToken }),
+      },
+    );
+  } catch {
+    throw new ApiError("Não foi possível baixar o comprovante. Tente novamente.");
+  }
+  if (!response.ok) {
+    const body = await responseBody(response);
+    throw new ApiError(body?.detail || "Não foi possível baixar o comprovante. Tente novamente.");
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${result.protocolo}.pdf`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

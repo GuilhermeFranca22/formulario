@@ -58,4 +58,8 @@ FORM_API_URL=https://geomidia-back.vercel.app/api
 Essa variável deve ser configurada nos ambientes da Vercel que publicarão o formulário. O domínio público
 definitivo do formulário também deve constar em `CORS_ORIGINS` e `PUBLIC_FORM_ORIGINS` no deployment do backend.
 
-O fluxo implementado nesta versão contempla somente **Processo novo**. Os anexos são enviados diretamente para URLs temporárias do armazenamento privado e, após a confirmação, a API devolve o protocolo criado no GeoMídia.
+Após informar o e-mail, o usuário escolhe **Processo novo** ou **Resposta de comunicado de exigência**. O processo novo mantém as etapas existentes. A tela de resposta segue a referência `../exigencia.jpeg` e coleta número do processo, número do comunicado e até 10 anexos PDF ou imagem de 10 MB cada.
+
+No **Processo novo**, os anexos são enviados diretamente para URLs temporárias do armazenamento privado. Após a confirmação, a API devolve um protocolo `VEI-01-ANO` (ou o próximo número daquele ano) e apresenta o botão **Baixar comprovante PDF**.
+
+A **Resposta de comunicado de exigência** também envia os anexos ao backend e, ao concluir, apresenta um protocolo `HESP-01-ANO` (ou o próximo número daquele ano) e o botão **Baixar comprovante PDF**. O PDF segue a referência `../HESP-0272-2026.pdf`. Os dois comprovantes são oferecidos para download; o envio por e-mail está inativo. O token de download fica apenas na sessão atual da página, então o usuário deve baixar o comprovante antes de fechá-la.

@@ -1,7 +1,7 @@
 export function createInitialState() {
   return {
     email: "",
-    processType: "PROCESSO_NOVO",
+    processType: "",
     startedAt: new Date().toISOString(),
     website: "",
     applicant: {
@@ -25,7 +25,12 @@ export function createInitialState() {
       bottomHeightM: "",
     },
     acknowledgement: false,
+    requirementResponse: {
+      processNumber: "",
+      noticeNumber: "",
+    },
     files: {
+      respostaExigencia: [],
       alvaraLocalizacao: [],
       requerimentoPadrao: [],
       autorizacaoProprietario: [],

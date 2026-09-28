@@ -6,11 +6,14 @@ import {
   renderIntroCopy,
   renderIntroStep,
   renderLocationStep,
+  renderProcessTypeStep,
+  renderRequirementResponseStep,
   renderVehicleStep,
 } from "./steps.js";
 import { createInitialState } from "./state.js";
+import { PROCESS_TYPES } from "./constants.js";
 import { buildNewProcessPayload } from "./payloads.js";
-import { submitNewProcess } from "./services/externalSystemApi.js";
+import { downloadReceipt, submitNewProcess, submitRequirementResponse } from "./services/externalSystemApi.js";
 import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 
@@ -24,11 +27,16 @@ let success = null;
 let isSubmitting = false;
 
 function getFlow() {
-  return ["intro", "applicant", "location", "vehicle", "documents", "acknowledgement"];
+  if (state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE) {
+    return ["intro", "processType", "requirementResponse"];
+  }
+  return ["intro", "processType", "applicant", "location", "vehicle", "documents", "acknowledgement"];
 }
 
 function stepContent(step) {
   if (step === "intro") return renderIntroStep(state, errors);
+  if (step === "processType") return renderProcessTypeStep(state, errors);
+  if (step === "requirementResponse") return renderRequirementResponseStep(state, errors);
   if (step === "applicant") return renderApplicantStep(state, errors);
   if (step === "location") return renderLocationStep(state, errors);
   if (step === "vehicle") return renderVehicleStep(state, errors);
@@ -49,13 +57,14 @@ function renderSuccess() {
       <h2>Solicitação enviada com sucesso</h2>
       ${protocol}
       <p>${escapeHtml(message)}</p>
+      ${success?.receiptDraftId ? '<button class="nav-button nav-button--primary" type="button" data-action="download-receipt">Baixar comprovante PDF</button>' : ""}
       <button class="nav-button nav-button--primary" type="button" data-action="new-request">Nova solicitação</button>
     </section>
   `;
 }
 
 function currentSubmitDisabled() {
-  if (currentStep !== "acknowledgement") return false;
+  if (currentStep !== "acknowledgement" && currentStep !== "requirementResponse") return false;
   return hasErrors(validateAll(state));
 }
 
@@ -129,7 +138,9 @@ async function submit() {
   render();
 
   try {
-    success = await submitNewProcess(state);
+    success = state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE
+      ? await submitRequirementResponse(state)
+      : await submitNewProcess(state);
   } catch (error) {
     submitError =
       error?.message ||
@@ -254,6 +265,15 @@ function bindEvents() {
       if (action === "submit") submit();
       if (action === "capture-location") captureLocation();
       if (action === "new-request") resetForm();
+      if (action === "download-receipt") {
+        downloadReceipt(success).catch((error) => {
+          const card = app.querySelector(".success-card");
+          const banner = document.createElement("div");
+          banner.className = "error-banner";
+          banner.textContent = error.message;
+          card?.append(banner);
+        });
+      }
       if (action === "clear" && window.confirm("Limpar todas as respostas?")) {
         resetForm();
       }

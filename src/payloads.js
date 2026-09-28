@@ -30,3 +30,15 @@ export function buildNewProcessPayload(state) {
     website: cleanText(state.website),
   };
 }
+
+export function buildRequirementResponsePayload(state) {
+  return {
+    tipoProcesso: PROCESS_TYPES.REQUIREMENT_RESPONSE,
+    email: cleanText(state.email),
+    numeroProcesso: cleanText(state.requirementResponse.processNumber),
+    numeroComunicado: cleanText(state.requirementResponse.noticeNumber),
+    ciente: state.acknowledgement,
+    iniciadoEm: state.startedAt,
+    website: cleanText(state.website),
+  };
+}

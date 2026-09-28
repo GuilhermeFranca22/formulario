@@ -3,6 +3,7 @@ export const FORM_TITLE =
 
 export const PROCESS_TYPES = {
   NEW: "PROCESSO_NOVO",
+  REQUIREMENT_RESPONSE: "RESPOSTA_COMUNICADO_EXIGENCIA",
 };
 
 export const VEHICLE_TYPES = [
@@ -31,6 +32,12 @@ export const LINKS = {
 };
 
 export const FILE_RULES = {
+  respostaExigencia: {
+    maxFiles: 10,
+    maxSizeMB: 10,
+    types: ["pdf", "image"],
+    required: true,
+  },
   alvaraLocalizacao: {
     maxFiles: 5,
     maxSizeMB: 10,

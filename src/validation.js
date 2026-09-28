@@ -1,4 +1,4 @@
-import { FILE_RULES } from "./constants.js";
+import { FILE_RULES, PROCESS_TYPES } from "./constants.js";
 import { cleanText, onlyDigits } from "./utils.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,6 +13,24 @@ function email(value) {
     return "Informe um e-mail.";
   }
   return EMAIL_PATTERN.test(cleanText(value)) ? "" : "Informe um e-mail válido.";
+}
+
+function validCnpj(cnpj) {
+  if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
+
+  const checkDigit = (length, weights) => {
+    const sum = weights.reduce(
+      (total, weight, index) => total + Number(cnpj[index]) * weight,
+      0,
+    );
+    const remainder = sum % 11;
+    return Number(cnpj[length]) === (remainder < 2 ? 0 : 11 - remainder);
+  };
+
+  return (
+    checkDigit(12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) &&
+    checkDigit(13, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+  );
 }
 
 function fileTypeIsAllowed(file, allowedTypes) {
@@ -61,6 +79,20 @@ export function validateStep(step, state) {
     if (message) errors.email = message;
   }
 
+  if (step === "processType" && !Object.values(PROCESS_TYPES).includes(state.processType)) {
+    errors.processType = "Escolha o tipo de solicitação.";
+  }
+
+  if (step === "requirementResponse") {
+    const processNumber = required(state.requirementResponse.processNumber);
+    const noticeNumber = required(state.requirementResponse.noticeNumber);
+    const files = validateFileGroup(state.files.respostaExigencia, FILE_RULES.respostaExigencia);
+    if (processNumber) errors["requirementResponse.processNumber"] = processNumber;
+    if (noticeNumber) errors["requirementResponse.noticeNumber"] = noticeNumber;
+    if (files) errors["files.respostaExigencia"] = files;
+    if (!state.acknowledgement) errors.acknowledgement = "Marque a confirmação para enviar.";
+  }
+
   if (step === "applicant") {
     const company = required(state.applicant.company);
     const cnpj = onlyDigits(state.applicant.cnpj);
@@ -75,6 +107,8 @@ export function validateStep(step, state) {
       errors["applicant.cnpj"] = "Informe o CNPJ da empresa.";
     } else if (!/^\d{14}$/.test(cnpj)) {
       errors["applicant.cnpj"] = "O CNPJ deve conter exatamente 14 números.";
+    } else if (!validCnpj(cnpj)) {
+      errors["applicant.cnpj"] = "Informe um CNPJ válido.";
     }
     if (municipalRegistration) {
       errors["applicant.municipalRegistration"] = municipalRegistration;
@@ -148,14 +182,12 @@ export function validateStep(step, state) {
 }
 
 export function validateAll(state) {
-  const steps = [
-    "intro",
-    "applicant",
-    "location",
-    "vehicle",
-    "documents",
-    "acknowledgement",
-  ];
+  const steps = ["intro", "processType"];
+  if (state.processType === PROCESS_TYPES.NEW) {
+    steps.push("applicant", "location", "vehicle", "documents", "acknowledgement");
+  } else if (state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE) {
+    steps.push("requirementResponse");
+  }
 
   return steps.reduce(
     (allErrors, step) => ({ ...allErrors, ...validateStep(step, state) }),

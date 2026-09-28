@@ -2,6 +2,7 @@ import {
   FACE_OPTIONS,
   FILE_RULES,
   LINKS,
+  PROCESS_TYPES,
   VEHICLE_TYPES,
 } from "./constants.js";
 import {
@@ -28,7 +29,7 @@ export function renderIntroCopy() {
         <li><strong>PASSO 3: RECEBA SEU PROTOCOLO:</strong> Ao clicar em "Enviar", os dados serão encaminhados ao sistema responsável pelo protocolo.</li>
         <li><strong>PASSO 4: CADASTRO E ACOMPANHAMENTO:</strong> O acompanhamento será realizado pela plataforma SEI como Usuário Externo, quando aplicável. <a href="${LINKS.seiExternalUsers}" target="_blank" rel="noreferrer">Acesso para usuários externos</a>.</li>
       </ul>
-      <p><strong>Para iniciar o requisito, por favor, preencha seu e-mail no campo abaixo e clique em "Avançar"</strong></p>
+      <p><strong>Para iniciar, preencha seu e-mail e clique em "Avançar". Na próxima etapa, escolha o tipo de solicitação.</strong></p>
     </div>
   `;
 }
@@ -48,6 +49,73 @@ export function renderIntroStep(state, errors) {
       <input type="text" data-field="website" value="${state.website}" tabindex="-1" autocomplete="off" />
     </label>
   </div>`;
+}
+
+export function renderProcessTypeStep(state, errors) {
+  return renderQuestion({
+    title: `Tipo de solicitação ${required}`,
+    control: renderRadioGroup({
+      name: "processType",
+      value: state.processType,
+      options: [
+        { label: "Processo novo", value: PROCESS_TYPES.NEW },
+        {
+          label: "Resposta de comunicado de exigência",
+          value: PROCESS_TYPES.REQUIREMENT_RESPONSE,
+        },
+      ],
+    }),
+    error: errors.processType,
+  });
+}
+
+export function renderRequirementResponseStep(state, errors) {
+  return `
+    ${renderSection(
+      "Resposta de Comunicado de Exigência",
+      renderInlineQuestion({
+        title: `Informe o número do processo ${required}`,
+        control: renderTextInput({
+          path: "requirementResponse.processNumber",
+          value: state.requirementResponse.processNumber,
+        }),
+        error: errors["requirementResponse.processNumber"],
+      }),
+    )}
+    ${renderQuestion({
+      title: `Informe o número do comunicado de exigência ${required}`,
+      control: renderTextInput({
+        path: "requirementResponse.noticeNumber",
+        value: state.requirementResponse.noticeNumber,
+      }),
+      error: errors["requirementResponse.noticeNumber"],
+    })}
+    ${renderQuestion({
+      title: `Anexe os documentos ${required}`,
+      control: renderFileUpload({
+        key: "respostaExigencia",
+        files: state.files.respostaExigencia,
+        rules: FILE_RULES.respostaExigencia,
+        error: errors["files.respostaExigencia"],
+      }),
+    })}
+    ${renderSection(
+      "IMPORTANTE",
+      `<p>Certifique-se de que seu cadastro no SEI utilize o mesmo e-mail de login informado aqui.</p>`,
+    )}
+    ${renderQuestion({
+      title: required,
+      control: `
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" data-checkbox="acknowledgement" ${state.acknowledgement ? "checked" : ""} />
+            <span>Estou ciente que a comunicação será feita exclusivamente pela plataforma SEI como usuário externo.</span>
+          </label>
+        </div>
+      `,
+      error: errors.acknowledgement,
+    })}
+  `;
 }
 
 export function renderApplicantStep(state, errors) {
