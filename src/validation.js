@@ -118,8 +118,10 @@ export function validateStep(step, state) {
 
   if (step === "location") {
     const registration = cleanText(state.location.realEstateRegistration);
-    const latitude = Number(state.location.latitude);
-    const longitude = Number(state.location.longitude);
+    const latitudeText = cleanText(state.location.latitude);
+    const longitudeText = cleanText(state.location.longitude);
+    const latitude = Number(latitudeText);
+    const longitude = Number(longitudeText);
 
     if (!registration) {
       errors["location.realEstateRegistration"] = "Informe a inscrição imobiliária.";
@@ -128,11 +130,11 @@ export function validateStep(step, state) {
         "A inscrição imobiliária deve conter exatamente 11 números.";
     }
 
-    if (!cleanText(state.location.latitude) || latitude < -20.65 || latitude > -20.3) {
-      errors["location.latitude"] = "Informe uma latitude válida dentro de Campo Grande.";
+    if (!latitudeText || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+      errors["location.latitude"] = "Informe uma latitude válida em graus decimais.";
     }
-    if (!cleanText(state.location.longitude) || longitude < -54.8 || longitude > -54.4) {
-      errors["location.longitude"] = "Informe uma longitude válida dentro de Campo Grande.";
+    if (!longitudeText || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      errors["location.longitude"] = "Informe uma longitude válida em graus decimais.";
     }
     ["street", "number", "district", "postalCode"].forEach((field) => {
       const message = required(state.location[field]);
@@ -143,6 +145,9 @@ export function validateStep(step, state) {
       !/^\d{5}-?\d{3}$/.test(cleanText(state.location.postalCode))
     ) {
       errors["location.postalCode"] = "Informe um CEP válido.";
+    }
+    if (!state.location.mapVisible || !state.location.confirmed) {
+      errors["location.confirmed"] = "Confira o ponto no mapa e confirme o local de instalação.";
     }
   }
 

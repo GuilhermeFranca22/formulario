@@ -1,6 +1,8 @@
 import { FACE_OPTIONS, PROCESS_TYPES, VEHICLE_TYPES } from "../src/constants.js";
 import { buildNewProcessPayload, buildRequirementResponsePayload } from "../src/payloads.js";
 import { createInitialState } from "../src/state.js";
+import { locationMapUrls } from "../src/location.js";
+import { renderLocationStep } from "../src/steps.js";
 import { validateAll } from "../src/validation.js";
 
 const pdf = { name: "documento.pdf", size: 1024, type: "application/pdf" };
@@ -15,6 +17,8 @@ newProcess.applicant.municipalRegistration = "123456";
 newProcess.location.realEstateRegistration = "12345678901";
 newProcess.location.latitude = "-20.457833";
 newProcess.location.longitude = "-54.606528";
+newProcess.location.mapVisible = true;
+newProcess.location.confirmed = true;
 newProcess.location.street = "Avenida Afonso Pena";
 newProcess.location.number = "1000";
 newProcess.location.district = "Centro";
@@ -32,6 +36,45 @@ newProcess.files.artRrt = [pdf];
 newProcess.acknowledgement = true;
 
 const newProcessErrors = validateAll(newProcess);
+const unconfirmedProcess = structuredClone(newProcess);
+unconfirmedProcess.location.confirmed = false;
+if (!validateAll(unconfirmedProcess)["location.confirmed"]) {
+  throw new Error("O ponto precisa ser conferido no mapa antes do envio.");
+}
+
+const municipalEdgeProcess = structuredClone(newProcess);
+municipalEdgeProcess.location.latitude = "-20.7408";
+municipalEdgeProcess.location.longitude = "-54.8163";
+if (Object.keys(validateAll(municipalEdgeProcess)).length > 0) {
+  throw new Error("Um ponto válido do município não pode ser bloqueado pelo formulário.");
+}
+
+const invalidCoordinatesProcess = structuredClone(newProcess);
+invalidCoordinatesProcess.location.latitude = "Infinity";
+invalidCoordinatesProcess.location.longitude = "abc";
+const coordinateErrors = validateAll(invalidCoordinatesProcess);
+if (!coordinateErrors["location.latitude"] || !coordinateErrors["location.longitude"]) {
+  throw new Error("Coordenadas inválidas precisam ser recusadas.");
+}
+
+const mapUrls = locationMapUrls(newProcess.location);
+if (!mapUrls?.page.includes("mlat=-20.457833&mlon=-54.606528") ||
+    !mapUrls.embed.includes("marker=-20.457833%2C-54.606528")) {
+  throw new Error("O mapa deve receber latitude e longitude na ordem correta.");
+}
+const previewHtml = renderLocationStep(newProcess, {});
+if (!previewHtml.includes(`src="${mapUrls.embed}"`) ||
+    !previewHtml.includes('data-checkbox="location.confirmed" checked')) {
+  throw new Error("A conferência do ponto deve mostrar o marcador e permitir confirmação.");
+}
+const hiddenPreviewProcess = structuredClone(newProcess);
+hiddenPreviewProcess.location.mapVisible = false;
+hiddenPreviewProcess.location.confirmed = false;
+const hiddenPreviewHtml = renderLocationStep(hiddenPreviewProcess, {});
+if (hiddenPreviewHtml.includes('class="location-map-frame"') ||
+    !/data-checkbox="location.confirmed"[^>]*disabled/.test(hiddenPreviewHtml)) {
+  throw new Error("A confirmação deve ficar indisponível antes de abrir o mapa.");
+}
 const invalidCnpjProcess = createInitialState();
 invalidCnpjProcess.processType = PROCESS_TYPES.NEW;
 invalidCnpjProcess.email = "usuario@example.com";

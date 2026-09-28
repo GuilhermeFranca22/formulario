@@ -222,6 +222,33 @@ a {
   flex: 0 0 auto;
 }
 
+.location-map-preview {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.location-map-preview p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.location-map-frame {
+  display: block;
+  width: 100%;
+  height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.location-confirmation {
+  margin-top: 18px;
+}
+
+.location-confirmation input:disabled + span {
+  color: var(--muted);
+}
+
 .radio-option--other {
   align-items: center;
   flex-wrap: wrap;

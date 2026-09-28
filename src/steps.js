@@ -14,6 +14,7 @@ import {
   renderTextInput,
 } from "./components.js";
 import { formatCnpj } from "./utils.js";
+import { locationMapUrls } from "./location.js";
 
 const required = '<span class="required-mark">*</span>';
 
@@ -159,6 +160,7 @@ export function renderApplicantStep(state, errors) {
   `;
 }
 export function renderLocationStep(state, errors) {
+  const mapUrls = state.location.mapVisible ? locationMapUrls(state.location) : null;
   return `
     ${renderSection("Local de Instalação do veículo de divulgação", "")}
     ${renderQuestion({
@@ -174,7 +176,7 @@ export function renderLocationStep(state, errors) {
     ${renderQuestion({
       title: `Coordenadas Geográficas ${required}`,
       description:
-        "Use o botão para captar a localização ou informe latitude e longitude em graus decimais.",
+        "Informe o ponto exato de instalação. O botão capta a posição do dispositivo, que pode ser diferente do local de instalação.",
       control: `<button class="file-button" type="button" data-action="capture-location">Captar localização atual</button>`,
     })}
     ${renderQuestion({
@@ -184,8 +186,8 @@ export function renderLocationStep(state, errors) {
         value: state.location.latitude,
         type: "number",
         step: "any",
-        min: "-20.65",
-        max: "-20.30",
+        min: "-90",
+        max: "90",
       }),
       error: errors["location.latitude"],
     })}
@@ -196,8 +198,8 @@ export function renderLocationStep(state, errors) {
         value: state.location.longitude,
         type: "number",
         step: "any",
-        min: "-54.80",
-        max: "-54.40",
+        min: "-180",
+        max: "180",
       }),
       error: errors["location.longitude"],
     })}
@@ -224,6 +226,27 @@ export function renderLocationStep(state, errors) {
         placeholder: "00000-000",
       }),
       error: errors["location.postalCode"],
+    })}
+    ${renderQuestion({
+      title: `Confira o ponto de instalação no mapa ${required}`,
+      description: "Compare o marcador com a rua e o número informados. Se o ponto estiver em outro lugar, corrija as coordenadas antes de avançar.",
+      control: `
+        <button class="file-button" type="button" data-action="show-location-map">Mostrar ponto no mapa</button>
+        ${mapUrls ? `
+          <div class="location-map-preview" data-location-preview>
+            ${state.location.gpsAccuracy !== null ? `<p>Precisão estimada do dispositivo: ±${state.location.gpsAccuracy} m.</p>` : ""}
+            <iframe class="location-map-frame" title="Ponto de instalação no OpenStreetMap" src="${mapUrls.embed}" loading="lazy"></iframe>
+            <a href="${mapUrls.page}" target="_blank" rel="noopener noreferrer">Abrir mapa maior</a>
+          </div>
+        ` : ""}
+        <div class="checkbox-row location-confirmation">
+          <label>
+            <input type="checkbox" data-checkbox="location.confirmed" ${state.location.confirmed ? "checked" : ""} ${mapUrls ? "" : "disabled"} />
+            <span>Confirmo que o marcador representa o local de instalação informado acima.</span>
+          </label>
+        </div>
+      `,
+      error: errors["location.confirmed"],
     })}
   `;
 }

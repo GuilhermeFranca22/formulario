@@ -60,6 +60,7 @@ async function postJson(url, body) {
     const detail = bodyResponse?.detail;
     const message =
       (typeof detail === "string" && detail) ||
+      (Array.isArray(detail) && detail.map((item) => item?.msg).filter(Boolean).join(" ")) ||
       bodyResponse?.message ||
       bodyResponse?.error ||
       "O GeoMídia recusou o envio. Revise os dados e tente novamente.";

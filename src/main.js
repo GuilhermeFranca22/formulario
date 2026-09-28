@@ -16,6 +16,7 @@ import { buildNewProcessPayload } from "./payloads.js";
 import { downloadReceipt, submitNewProcess, submitRequirementResponse } from "./services/externalSystemApi.js";
 import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
+import { parseCoordinates } from "./location.js";
 
 const app = document.querySelector("#app");
 
@@ -173,6 +174,10 @@ function captureLocation() {
     (position) => {
       state.location.latitude = position.coords.latitude.toFixed(6);
       state.location.longitude = position.coords.longitude.toFixed(6);
+      state.location.mapVisible = true;
+      state.location.confirmed = false;
+      state.location.gpsAccuracy = Number.isFinite(position.coords.accuracy)
+        ? Math.round(position.coords.accuracy) : null;
       submitError = "";
       delete errors["location.latitude"];
       delete errors["location.longitude"];
@@ -203,6 +208,17 @@ function bindEvents() {
       }
 
       setByPath(state, path, value);
+      if (path.startsWith("location.")) {
+        state.location.mapVisible = false;
+        state.location.confirmed = false;
+        state.location.gpsAccuracy = null;
+        app.querySelector("[data-location-preview]")?.remove();
+        const confirmation = app.querySelector('[data-checkbox="location.confirmed"]');
+        if (confirmation) {
+          confirmation.checked = false;
+          confirmation.disabled = true;
+        }
+      }
       delete errors[path];
       submitError = "";
     });
@@ -264,6 +280,15 @@ function bindEvents() {
       if (action === "back") goBack();
       if (action === "submit") submit();
       if (action === "capture-location") captureLocation();
+      if (action === "show-location-map") {
+        if (!parseCoordinates(state.location)) {
+          submitError = "Informe latitude e longitude válidas antes de abrir o mapa.";
+        } else {
+          state.location.mapVisible = true;
+          submitError = "";
+        }
+        render();
+      }
       if (action === "new-request") resetForm();
       if (action === "download-receipt") {
         downloadReceipt(success).catch((error) => {

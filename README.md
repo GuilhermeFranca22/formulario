@@ -62,4 +62,6 @@ Após informar o e-mail, o usuário escolhe **Processo novo** ou **Resposta de c
 
 No **Processo novo**, os anexos são enviados diretamente para URLs temporárias do armazenamento privado. Após a confirmação, a API devolve um protocolo `VEI-01-ANO` (ou o próximo número daquele ano) e apresenta o botão **Baixar comprovante PDF**.
 
+Na etapa de localização, o usuário informa as coordenadas do ponto de instalação ou capta a posição do dispositivo, confere o marcador no OpenStreetMap e confirma o local antes de avançar. Alterar o endereço ou as coordenadas exige nova conferência. O formulário valida a faixa geográfica dos números; o backend valida o limite municipal de Campo Grande ao receber a solicitação. A prévia no mapa ajuda na conferência visual, mas não faz geocodificação nem prova que a rua e o número correspondem ao ponto.
+
 A **Resposta de comunicado de exigência** também envia os anexos ao backend e, ao concluir, apresenta um protocolo `HESP-01-ANO` (ou o próximo número daquele ano) e o botão **Baixar comprovante PDF**. O PDF segue a referência `../HESP-0272-2026.pdf`. Os dois comprovantes são oferecidos para download; o envio por e-mail está inativo. O token de download fica apenas na sessão atual da página, então o usuário deve baixar o comprovante antes de fechá-la.

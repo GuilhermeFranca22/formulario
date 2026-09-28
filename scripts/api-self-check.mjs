@@ -75,6 +75,11 @@ try {
 
   assert(requests.some(({ url }) => url.endsWith("/process-draft/comprovante")));
   assert(requests.some(({ url }) => url.endsWith("/exigencias/response-draft/comprovante")));
+
+  globalThis.fetch = async () => Response.json({
+    detail: [{ msg: "Coordenadas fora do município de Campo Grande." }],
+  }, { status: 422 });
+  await assert.rejects(submitNewProcess(processState), /Coordenadas fora do município/);
   console.log("Envio e download dos dois comprovantes: OK");
 } finally {
   globalThis.fetch = originalFetch;
