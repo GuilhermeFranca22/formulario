@@ -13,7 +13,7 @@ import {
 import { createInitialState } from "./state.js";
 import { PROCESS_TYPES } from "./constants.js";
 import { buildNewProcessPayload } from "./payloads.js";
-import { downloadReceipt, submitNewProcess, submitRequirementResponse } from "./services/externalSystemApi.js";
+import { downloadReceipt, fetchPublicVehicleRules, submitNewProcess, submitRequirementResponse } from "./services/externalSystemApi.js";
 import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 import { parseCoordinates } from "./location.js";
@@ -160,6 +160,18 @@ function resetForm() {
   success = null;
   isSubmitting = false;
   render();
+  loadVehicleRules();
+}
+
+function loadVehicleRules() {
+  fetchPublicVehicleRules().then((rules) => {
+    state.vehicleRules = rules;
+    state.vehicleRulesLoaded = true;
+    if (currentStep === "vehicle") render();
+  }).catch((error) => {
+    submitError = error.message;
+    render();
+  });
 }
 
 function captureLocation() {
@@ -229,6 +241,7 @@ function bindEvents() {
       const path = event.currentTarget.dataset.radio;
       const value = event.currentTarget.value;
       setByPath(state, path, value);
+      if (path === "vehicle.type") state.vehicle.areaRuleClassification = "";
 
       delete errors[path];
       submitError = "";
@@ -312,3 +325,4 @@ window.FORMS_GEO_DEBUG = {
 };
 
 render();
+loadVehicleRules();

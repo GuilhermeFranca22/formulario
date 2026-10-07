@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 
 import { PROCESS_TYPES } from "../src/constants.js";
-import { submitNewProcess, submitRequirementResponse, downloadReceipt } from "../src/services/externalSystemApi.js";
+import { submitNewProcess, submitRequirementResponse, downloadReceipt, fetchPublicVehicleRules } from "../src/services/externalSystemApi.js";
 import { createInitialState } from "../src/state.js";
 
 const requests = [];
@@ -24,6 +24,7 @@ globalThis.setTimeout = () => 0;
 globalThis.fetch = async (input, options = {}) => {
   const url = String(input);
   requests.push({ url, method: options.method ?? "GET" });
+  if (url.endsWith("/regras")) return Response.json([{ tipo: "painel de led", limiteAreaM2: 5 }]);
   if (url.endsWith("/iniciar")) {
     const body = JSON.parse(options.body);
     const draftId = url.includes("/exigencias/") ? "response-draft" : "process-draft";
@@ -53,6 +54,7 @@ globalThis.fetch = async (input, options = {}) => {
 };
 
 try {
+  assert.deepEqual(await fetchPublicVehicleRules(), [{ tipo: "painel de led", limiteAreaM2: 5 }]);
   const processState = createInitialState();
   processState.email = "requerente@example.com";
   processState.processType = PROCESS_TYPES.NEW;

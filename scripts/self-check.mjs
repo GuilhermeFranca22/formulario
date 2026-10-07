@@ -2,7 +2,7 @@ import { FACE_OPTIONS, PROCESS_TYPES, VEHICLE_TYPES } from "../src/constants.js"
 import { buildNewProcessPayload, buildRequirementResponsePayload } from "../src/payloads.js";
 import { createInitialState } from "../src/state.js";
 import { locationMapUrls } from "../src/location.js";
-import { renderLocationStep } from "../src/steps.js";
+import { renderLocationStep, renderVehicleStep } from "../src/steps.js";
 import { validateAll } from "../src/validation.js";
 
 const pdf = { name: "documento.pdf", size: 1024, type: "application/pdf" };
@@ -25,8 +25,10 @@ newProcess.location.district = "Centro";
 newProcess.location.postalCode = "79002-000";
 newProcess.vehicle.type = "outdoor";
 newProcess.vehicle.faces = "Uma";
-newProcess.vehicle.areaM2 = "12";
-newProcess.vehicle.bottomHeightM = "4";
+newProcess.vehicleRules = VEHICLE_TYPES.map(({ value }) => ({
+  tipo: value, limiteAreaM2: value === "painel de led" ? 5 : null,
+}));
+newProcess.vehicleRulesLoaded = true;
 newProcess.files.alvaraLocalizacao = [pdf];
 newProcess.files.requerimentoPadrao = [pdf];
 newProcess.files.autorizacaoProprietario = [pdf];
@@ -136,6 +138,33 @@ if (
 }
 
 const newProcessPayload = buildNewProcessPayload(newProcess);
+const fixedTypeHtml = renderVehicleStep(newProcess, {});
+if (fixedTypeHtml.includes("Área do veículo") || fixedTypeHtml.includes("Altura da borda inferior") ||
+    fixedTypeHtml.includes("areaRuleClassification")) {
+  throw new Error("Tipo com raio fixo não deve pedir medidas nem classificação.");
+}
+if ("areaM2" in newProcessPayload.veiculoDivulgacao ||
+    "alturaBordaInferiorM" in newProcessPayload.veiculoDivulgacao) {
+  throw new Error("Medidas numéricas não devem ser enviadas.");
+}
+const smallPanel = structuredClone(newProcess);
+smallPanel.vehicle.type = "painel de led";
+smallPanel.vehicleRules.find((item) => item.tipo === "painel de led").limiteAreaM2 = 7;
+const smallPanelHtml = renderVehicleStep(smallPanel, {});
+if (!smallPanelHtml.includes("limite de 7 m²") || !smallPanelHtml.includes("within_limit") ||
+    !smallPanelHtml.includes("above_limit")) {
+  throw new Error("A pergunta deve usar o limite carregado da regra ativa.");
+}
+if (!validateAll(smallPanel)["vehicle.areaRuleClassification"]) {
+  throw new Error("A classificação deve ser obrigatória para regra por área.");
+}
+for (const classification of ["within_limit", "above_limit"]) {
+  smallPanel.vehicle.areaRuleClassification = classification;
+  if (Object.keys(validateAll(smallPanel)).length ||
+      buildNewProcessPayload(smallPanel).veiculoDivulgacao.areaRuleClassification !== classification) {
+    throw new Error("A classificação escolhida deve ser validada e enviada.");
+  }
+}
 
 if (newProcessPayload.requerente.cnpj !== "11222333000181") {
   throw new Error(`CNPJ ausente ou incorreto no payload: ${JSON.stringify(newProcessPayload)}`);
