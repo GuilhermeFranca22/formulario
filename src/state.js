@@ -24,9 +24,10 @@ export function createInitialState() {
     vehicle: {
       type: "",
       faces: "",
-      areaM2: "",
-      bottomHeightM: "",
+      areaRuleClassification: "",
     },
+    vehicleRules: [],
+    vehicleRulesLoaded: false,
     acknowledgement: false,
     requirementResponse: {
       processNumber: "",
@@ -66,8 +67,7 @@ export function clearNewProcessData(state) {
   state.vehicle = {
     type: "",
     faces: "",
-    areaM2: "",
-    bottomHeightM: "",
+    areaRuleClassification: "",
   };
   state.acknowledgement = false;
   state.files.alvaraLocalizacao = [];

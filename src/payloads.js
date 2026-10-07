@@ -22,8 +22,9 @@ export function buildNewProcessPayload(state) {
     veiculoDivulgacao: {
       tipo: state.vehicle.type,
       quantidadeFaces: state.vehicle.faces,
-      areaM2: Number(state.vehicle.areaM2),
-      alturaBordaInferiorM: Number(state.vehicle.bottomHeightM),
+      ...(state.vehicle.areaRuleClassification
+        ? { areaRuleClassification: state.vehicle.areaRuleClassification }
+        : {}),
     },
     ciente: state.acknowledgement,
     iniciadoEm: state.startedAt,
