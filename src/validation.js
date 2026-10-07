@@ -154,11 +154,12 @@ export function validateStep(step, state) {
   if (step === "vehicle") {
     const type = required(state.vehicle.type, "Escolha o tipo de veículo.");
     if (type) errors["vehicle.type"] = type;
-    if (!cleanText(state.vehicle.areaM2) || Number(state.vehicle.areaM2) <= 0) {
-      errors["vehicle.areaM2"] = "Informe uma área maior que zero.";
-    }
-    if (!cleanText(state.vehicle.bottomHeightM) || Number(state.vehicle.bottomHeightM) < 0) {
-      errors["vehicle.bottomHeightM"] = "Informe uma altura igual ou maior que zero.";
+    const rule = state.vehicleRules.find((item) => item.tipo === state.vehicle.type);
+    if (!state.vehicleRulesLoaded || (state.vehicle.type && !rule)) {
+      errors["vehicle.rules"] = "Não foi possível carregar a regra do veículo. Recarregue a página.";
+    } else if (rule?.limiteAreaM2 != null &&
+      !["within_limit", "above_limit"].includes(state.vehicle.areaRuleClassification)) {
+      errors["vehicle.areaRuleClassification"] = "Informe se a área supera o limite indicado.";
     }
   }
 

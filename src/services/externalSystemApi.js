@@ -96,6 +96,19 @@ function collectFiles(state) {
   );
 }
 
+export async function fetchPublicVehicleRules() {
+  let response;
+  try {
+    response = await fetch(buildUrl("/regras"));
+  } catch {
+    throw new ApiError("Não foi possível carregar as regras dos veículos.");
+  }
+  if (!response.ok) throw new ApiError("Não foi possível carregar as regras dos veículos.");
+  const rules = await response.json();
+  if (!Array.isArray(rules)) throw new ApiError("As regras dos veículos estão indisponíveis.");
+  return rules;
+}
+
 async function uploadFile(signedUrl, file) {
   const data = new FormData();
   data.append("cacheControl", "3600");

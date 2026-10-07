@@ -252,6 +252,8 @@ export function renderLocationStep(state, errors) {
 }
 
 export function renderVehicleStep(state, errors) {
+  const rule = state.vehicleRules.find((item) => item.tipo === state.vehicle.type);
+  const threshold = rule?.limiteAreaM2;
   return `
     ${renderSection(
       "TIPO DE VEÍCULO DE DIVULGAÇÃO",
@@ -267,29 +269,19 @@ export function renderVehicleStep(state, errors) {
         value: state.vehicle.type,
         options: VEHICLE_TYPES,
       }),
-      error: errors["vehicle.type"],
+      error: errors["vehicle.type"] || errors["vehicle.rules"],
     })}
-    ${renderQuestion({
-      title: `Área do veículo (m²) ${required}`,
-      control: renderTextInput({
-        path: "vehicle.areaM2",
-        value: state.vehicle.areaM2,
-        type: "number",
-        step: "0.01",
-        min: "0.01",
+    ${threshold == null ? "" : renderQuestion({
+      title: `O painel possui área superior ao limite de ${Number(threshold).toLocaleString("pt-BR")} m²? ${required}`,
+      control: renderRadioGroup({
+        name: "vehicle.areaRuleClassification",
+        value: state.vehicle.areaRuleClassification,
+        options: [
+          { label: "Não", value: "within_limit" },
+          { label: "Sim", value: "above_limit" },
+        ],
       }),
-      error: errors["vehicle.areaM2"],
-    })}
-    ${renderQuestion({
-      title: `Altura da borda inferior (m) ${required}`,
-      control: renderTextInput({
-        path: "vehicle.bottomHeightM",
-        value: state.vehicle.bottomHeightM,
-        type: "number",
-        step: "0.01",
-        min: "0",
-      }),
-      error: errors["vehicle.bottomHeightM"],
+      error: errors["vehicle.areaRuleClassification"],
     })}
   `;
 }
