@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 
 import { PROCESS_TYPES } from "../src/constants.js";
+import { recoverAreaAnswerIfRuleChanged } from "../src/areaRuleChange.js";
 import { createInitialState } from "../src/state.js";
 import {
   clearPendingNewProcessSubmission, hasPendingNewProcessSubmission, submitNewProcess,
@@ -140,6 +141,30 @@ try {
   assert.equal(recovered.protocolo, "VEI-04-2026");
   assert.deepEqual([starts, uploads, finals], [0, 0, 1]);
   assert.equal(reloaded.hasPendingNewProcessSubmission(), false);
+
+  entries.set("geomidia:pending-new-process", JSON.stringify({
+    draftId: "draft-old-rule", token: "x".repeat(32),
+  }));
+  finals = 0;
+  globalThis.fetch = async (url) => {
+    if (url.endsWith("/finalizar")) {
+      finals++;
+      return Response.json({ detail: "A regra de area mudou. Confira e responda novamente." }, { status: 409 });
+    }
+    throw new Error(`Rota inesperada: ${url}`);
+  };
+  const recoveredState = createInitialState();
+  const changedError = await reloaded.recoverNewProcessSubmission().then(
+    () => { throw new Error("O draft incompatível não pode finalizar."); },
+    (error) => error,
+  );
+  const recovery = recoverAreaAnswerIfRuleChanged(
+    changedError, recoveredState, reloaded.clearPendingNewProcessSubmission, () => {},
+  );
+  assert.equal(recovery.step, "intro");
+  assert.equal(reloaded.hasPendingNewProcessSubmission(), false);
+  await assert.rejects(reloaded.recoverNewProcessSubmission(), /Não há envio pendente/);
+  assert.equal(finals, 1, "o mesmo draft incompatível não deve entrar em loop");
   clearPendingNewProcessSubmission();
   console.log("Idempotência, retry e recuperação do Forms: OK");
 } finally {
