@@ -1,11 +1,30 @@
-import { FACE_OPTIONS, PROCESS_TYPES, VEHICLE_TYPES } from "../src/constants.js";
+import { FACE_OPTIONS, FILE_RULES, PROCESS_TYPES, PUBLIC_ATTACHMENT_MAX_MIB, VEHICLE_TYPES } from "../src/constants.js";
+import { renderFileUpload } from "../src/components.js";
 import { buildNewProcessPayload, buildRequirementResponsePayload } from "../src/payloads.js";
 import { createInitialState } from "../src/state.js";
 import { locationMapUrls } from "../src/location.js";
 import { renderLocationStep, renderVehicleStep } from "../src/steps.js";
-import { validateAll } from "../src/validation.js";
+import { validateAll, validateFileGroup } from "../src/validation.js";
 
 const pdf = { name: "documento.pdf", size: 1024, type: "application/pdf" };
+const maxUploadBytes = 25 * 1024 * 1024;
+if (PUBLIC_ATTACHMENT_MAX_MIB !== 25) throw new Error("O limite público deve ser de 25 MiB por arquivo.");
+for (const [category, rules] of Object.entries(FILE_RULES)) {
+  const allowed = { ...pdf, size: maxUploadBytes };
+  const oversized = { ...pdf, size: maxUploadBytes + 1 };
+  if (rules.maxSizeMiB !== 25 || validateFileGroup([allowed], rules)) {
+    throw new Error(`${category} deve aceitar um PDF de até 25 MiB.`);
+  }
+  if (!validateFileGroup([oversized], rules).includes("25 MiB")) {
+    throw new Error(`${category} deve recusar e explicar o limite acima de 25 MiB.`);
+  }
+  if (!renderFileUpload({ key: category, files: [], rules }).includes("25 MiB")) {
+    throw new Error(`${category} deve mostrar 25 MiB na interface.`);
+  }
+  if (!renderFileUpload({ key: category, files: [allowed], rules }).includes("25.0 MiB")) {
+    throw new Error(`${category} deve mostrar o tamanho do arquivo em MiB.`);
+  }
+}
 
 const newProcess = createInitialState();
 newProcess.email = "usuario@example.com";
