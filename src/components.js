@@ -143,7 +143,7 @@ export function renderNavigation({ canGoBack, isFinal, isSubmitting, submitDisab
       <div class="navigation__left">
         ${
           canGoBack
-            ? `<button class="nav-button" type="button" data-action="back">Voltar</button>`
+            ? `<button class="nav-button" type="button" data-action="back" ${isSubmitting ? "disabled" : ""}>Voltar</button>`
             : ""
         }
         <button
@@ -155,7 +155,7 @@ export function renderNavigation({ canGoBack, isFinal, isSubmitting, submitDisab
           ${isSubmitting ? "Enviando..." : isFinal ? "Enviar" : "Avançar"}
         </button>
       </div>
-      <button class="link-button" type="button" data-action="clear">Limpar formulário</button>
+      <button class="link-button" type="button" data-action="clear" ${isSubmitting ? "disabled" : ""}>Limpar formulário</button>
     </nav>
   `;
 }

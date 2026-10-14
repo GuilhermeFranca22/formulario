@@ -10,6 +10,42 @@ const FILE_CATEGORIES = [
   "projetoImplantacao",
   "artRrt",
 ];
+const PENDING_NEW_PROCESS_KEY = "geomidia:pending-new-process";
+let activeNewProcess = null;
+let newProcessInFlight = null;
+
+function readPendingNewProcess() {
+  try {
+    const value = JSON.parse(window.sessionStorage?.getItem(PENDING_NEW_PROCESS_KEY) ?? "null");
+    return typeof value?.draftId === "string" && typeof value?.token === "string"
+      ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingNewProcess(initiated) {
+  try {
+    window.sessionStorage?.setItem(PENDING_NEW_PROCESS_KEY, JSON.stringify({
+      draftId: initiated.rascunhoId, token: initiated.token,
+    }));
+  } catch {
+    // The in-memory draft still supports retries in this tab.
+  }
+}
+
+export function hasPendingNewProcessSubmission() {
+  return Boolean(readPendingNewProcess());
+}
+
+export function clearPendingNewProcessSubmission() {
+  activeNewProcess = null;
+  try {
+    window.sessionStorage?.removeItem(PENDING_NEW_PROCESS_KEY);
+  } catch {
+    // Storage may be unavailable in private browsing.
+  }
+}
 
 class ApiError extends Error {
   constructor(message, details) {
@@ -128,37 +164,68 @@ async function uploadFile(signedUrl, file) {
   }
 }
 
-export async function submitNewProcess(state) {
+async function finalizeNewProcess(draftId, token) {
+  const result = await postJson(buildUrl(`/${encodeURIComponent(draftId)}/finalizar`), { token });
+  clearPendingNewProcessSubmission();
+  return { ...result, receiptDraftId: draftId, receiptToken: token, receiptEndpoint: "newProcess" };
+}
+
+async function submitNewProcessOnce(state) {
+  const pending = readPendingNewProcess();
+  if (pending) return finalizeNewProcess(pending.draftId, pending.token);
+
   const files = collectFiles(state);
-  const initiated = await postJson(buildUrl("/iniciar"), {
-    payload: buildNewProcessPayload(state),
-    arquivos: files.map(({ clientId, category, file }) => ({
-      idCliente: clientId,
-      categoria: category,
-      nome: file.name,
-      tipoConteudo: normalizedContentType(file),
-      tamanhoBytes: file.size,
-    })),
-  });
+  const payload = buildNewProcessPayload(state);
+  const attachments = files.map(({ clientId, category, file }) => ({
+    idCliente: clientId,
+    categoria: category,
+    nome: file.name,
+    tipoConteudo: normalizedContentType(file),
+    tamanhoBytes: file.size,
+  }));
+  const snapshot = JSON.stringify({ payload, attachments });
+  if (activeNewProcess && activeNewProcess.snapshot !== snapshot) activeNewProcess = null;
 
-  const filesById = new Map(files.map((item) => [item.clientId, item.file]));
-  await Promise.all(
-    initiated.envios.map((target) => {
-      const file = filesById.get(target.idCliente);
-      if (!file) throw new ApiError("O GeoMídia devolveu um anexo desconhecido.");
-      return uploadFile(target.urlAssinada, file);
-    }),
-  );
+  if (!activeNewProcess) {
+    const initiated = await postJson(buildUrl("/iniciar"), {
+      payload,
+      arquivos: attachments,
+    });
+    activeNewProcess = {
+      initiated, snapshot, filesById: new Map(files.map((item) => [item.clientId, item.file])), uploaded: new Set(),
+    };
+  }
 
-  const result = await postJson(buildUrl(`/${encodeURIComponent(initiated.rascunhoId)}/finalizar`), {
-    token: initiated.token,
-  });
-  return {
-    ...result,
-    receiptDraftId: initiated.rascunhoId,
-    receiptToken: initiated.token,
-    receiptEndpoint: "newProcess",
-  };
+  const { initiated, filesById, uploaded } = activeNewProcess;
+  const attempts = await Promise.allSettled(initiated.envios.filter((target) => !uploaded.has(target.idCliente)).map(async (target) => {
+    const file = filesById.get(target.idCliente);
+    if (!file) throw new ApiError("O GeoMídia devolveu um anexo desconhecido.");
+    await uploadFile(target.urlAssinada, file);
+    uploaded.add(target.idCliente);
+  }));
+  const failed = attempts.find((attempt) => attempt.status === "rejected");
+  if (failed) {
+    // A PUT can reach Storage even when its response is lost. Let the backend verify every object first.
+    try {
+      return await finalizeNewProcess(initiated.rascunhoId, initiated.token);
+    } catch {
+      throw failed.reason;
+    }
+  }
+
+  savePendingNewProcess(initiated);
+  return finalizeNewProcess(initiated.rascunhoId, initiated.token);
+}
+
+export function submitNewProcess(state) {
+  if (newProcessInFlight) return newProcessInFlight;
+  newProcessInFlight = submitNewProcessOnce(state).finally(() => { newProcessInFlight = null; });
+  return newProcessInFlight;
+}
+
+export function recoverNewProcessSubmission() {
+  if (!hasPendingNewProcessSubmission()) return Promise.reject(new ApiError("Não há envio pendente para recuperar."));
+  return submitNewProcess(null);
 }
 
 export async function submitRequirementResponse(state) {
