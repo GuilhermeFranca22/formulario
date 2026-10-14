@@ -13,7 +13,10 @@ import {
 import { createInitialState } from "./state.js";
 import { PROCESS_TYPES } from "./constants.js";
 import { buildNewProcessPayload } from "./payloads.js";
-import { downloadReceipt, fetchPublicVehicleRules, submitNewProcess, submitRequirementResponse } from "./services/externalSystemApi.js";
+import {
+  clearPendingNewProcessSubmission, downloadReceipt, fetchPublicVehicleRules,
+  hasPendingNewProcessSubmission, recoverNewProcessSubmission, submitNewProcess, submitRequirementResponse,
+} from "./services/externalSystemApi.js";
 import { escapeHtml, formatCnpj, getByPath, onlyDigits, setByPath } from "./utils.js";
 import { hasErrors, validateAll, validateStep } from "./validation.js";
 import { parseCoordinates } from "./location.js";
@@ -26,6 +29,7 @@ let errors = {};
 let submitError = "";
 let success = null;
 let isSubmitting = false;
+let recoveryPending = hasPendingNewProcessSubmission();
 
 function getFlow() {
   if (state.processType === PROCESS_TYPES.REQUIREMENT_RESPONSE) {
@@ -72,6 +76,21 @@ function currentSubmitDisabled() {
 function render() {
   if (success) {
     renderSuccess();
+    bindEvents();
+    return;
+  }
+
+  if (recoveryPending) {
+    app.innerHTML = `
+      ${renderHeader(state)}
+      <section class="success-card">
+        <h2>Envio pendente</h2>
+        <p>Os anexos já foram enviados. Tente concluir o mesmo envio para recuperar o protocolo.</p>
+        ${submitError ? `<div class="error-banner">${escapeHtml(submitError)}</div>` : ""}
+        <button class="nav-button nav-button--primary" type="button" data-action="recover-submit" ${isSubmitting ? "disabled" : ""}>${isSubmitting ? "Concluindo..." : "Concluir envio"}</button>
+        <button class="nav-button" type="button" data-action="new-request" ${isSubmitting ? "disabled" : ""}>Nova solicitação</button>
+      </section>
+    `;
     bindEvents();
     return;
   }
@@ -127,6 +146,7 @@ function goBack() {
 }
 
 async function submit() {
+  if (isSubmitting) return;
   submitError = "";
   errors = validateAll(state);
 
@@ -143,6 +163,7 @@ async function submit() {
       ? await submitRequirementResponse(state)
       : await submitNewProcess(state);
   } catch (error) {
+    recoveryPending = hasPendingNewProcessSubmission();
     submitError =
       error?.message ||
       "Não foi possível enviar a solicitação. Tente novamente em alguns instantes.";
@@ -152,13 +173,31 @@ async function submit() {
   }
 }
 
+async function recoverSubmission() {
+  if (isSubmitting) return;
+  isSubmitting = true;
+  submitError = "";
+  render();
+  try {
+    success = await recoverNewProcessSubmission();
+    recoveryPending = false;
+  } catch (error) {
+    submitError = error?.message || "Não foi possível concluir o envio. Tente novamente.";
+  } finally {
+    isSubmitting = false;
+    render();
+  }
+}
+
 function resetForm() {
+  clearPendingNewProcessSubmission();
   state = createInitialState();
   currentStep = "intro";
   errors = {};
   submitError = "";
   success = null;
   isSubmitting = false;
+  recoveryPending = false;
   render();
   loadVehicleRules();
 }
@@ -292,6 +331,7 @@ function bindEvents() {
       if (action === "next") goNext();
       if (action === "back") goBack();
       if (action === "submit") submit();
+      if (action === "recover-submit") recoverSubmission();
       if (action === "capture-location") captureLocation();
       if (action === "show-location-map") {
         if (!parseCoordinates(state.location)) {
