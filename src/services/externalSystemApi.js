@@ -135,7 +135,7 @@ function collectFiles(state) {
 export async function fetchPublicVehicleRules() {
   let response;
   try {
-    response = await fetch(buildUrl("/regras"));
+    response = await fetch(buildUrl("/regras"), { cache: "no-store" });
   } catch {
     throw new ApiError("Não foi possível carregar as regras dos veículos.");
   }
