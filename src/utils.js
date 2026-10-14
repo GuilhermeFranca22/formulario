@@ -46,11 +46,11 @@ export function getByPath(target, path) {
 }
 
 export function formatBytes(bytes) {
-  const mb = bytes / 1024 / 1024;
-  if (mb >= 1) {
-    return `${mb.toFixed(1)} MB`;
+  const mib = bytes / 1024 / 1024;
+  if (mib >= 1) {
+    return `${mib.toFixed(1)} MiB`;
   }
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KiB`;
 }
 
 export function uploadIcon() {

@@ -109,8 +109,8 @@ export function renderFileUpload({ key, files, rules, error = "" }) {
     : "PDF";
   const help =
     rules.maxFiles === 1
-      ? `Faça upload de 1 arquivo aceito: ${acceptedTypes}. O tamanho máximo é de ${rules.maxSizeMB} MB.`
-      : `Faça upload de até ${rules.maxFiles} arquivos aceitos: ${acceptedTypes}. O tamanho máximo é de ${rules.maxSizeMB} MB por item.`;
+      ? `Faça upload de 1 arquivo aceito: ${acceptedTypes}. O tamanho máximo é de ${rules.maxSizeMiB} MiB.`
+      : `Faça upload de até ${rules.maxFiles} arquivos aceitos: ${acceptedTypes}. O tamanho máximo é de ${rules.maxSizeMiB} MiB por item.`;
   const accept = rules.types.includes("image") ? ".pdf,image/*" : ".pdf,application/pdf";
   const multiple = rules.maxFiles > 1 ? "multiple" : "";
   const list = files

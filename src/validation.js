@@ -63,8 +63,8 @@ export function validateFileGroup(files, rules) {
       errors.push(`"${file.name}" não está em um formato permitido.`);
     }
 
-    if (file.size > rules.maxSizeMB * 1024 * 1024) {
-      errors.push(`"${file.name}" ultrapassa ${rules.maxSizeMB} MB.`);
+    if (file.size > rules.maxSizeMiB * 1024 * 1024) {
+      errors.push(`"${file.name}" ultrapassa ${rules.maxSizeMiB} MiB.`);
     }
   });
 
