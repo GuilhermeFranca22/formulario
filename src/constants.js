@@ -31,52 +31,54 @@ export const LINKS = {
     "https://www.campogrande.ms.gov.br/semades/sec-downloads/modelo-prancha-veiculos/",
 };
 
+export const PUBLIC_ATTACHMENT_MAX_MIB = 25;
+
 export const FILE_RULES = {
   respostaExigencia: {
     maxFiles: 10,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf", "image"],
     required: true,
   },
   alvaraLocalizacao: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf", "image"],
     required: true,
   },
   requerimentoPadrao: {
     maxFiles: 1,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf"],
     required: true,
   },
   autorizacaoProprietario: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf", "image"],
     required: true,
   },
   documentoProprietario: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf", "image"],
     required: false,
   },
   projetoEstrutural: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf"],
     required: true,
   },
   projetoImplantacao: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf"],
     required: true,
   },
   artRrt: {
     maxFiles: 5,
-    maxSizeMB: 10,
+    maxSizeMiB: PUBLIC_ATTACHMENT_MAX_MIB,
     types: ["pdf"],
     required: true,
   },
