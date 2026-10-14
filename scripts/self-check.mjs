@@ -180,7 +180,8 @@ if (!validateAll(smallPanel)["vehicle.areaRuleClassification"]) {
 for (const classification of ["within_limit", "above_limit"]) {
   smallPanel.vehicle.areaRuleClassification = classification;
   if (Object.keys(validateAll(smallPanel)).length ||
-      buildNewProcessPayload(smallPanel).veiculoDivulgacao.areaRuleClassification !== classification) {
+      buildNewProcessPayload(smallPanel).veiculoDivulgacao.areaRuleClassification !== classification ||
+      buildNewProcessPayload(smallPanel).veiculoDivulgacao.areaRuleThresholdM2 !== 7) {
     throw new Error("A classificação escolhida deve ser validada e enviada.");
   }
 }

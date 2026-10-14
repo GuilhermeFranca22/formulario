@@ -23,7 +23,10 @@ export function buildNewProcessPayload(state) {
       tipo: state.vehicle.type,
       quantidadeFaces: state.vehicle.faces,
       ...(state.vehicle.areaRuleClassification
-        ? { areaRuleClassification: state.vehicle.areaRuleClassification }
+        ? {
+            areaRuleClassification: state.vehicle.areaRuleClassification,
+            areaRuleThresholdM2: state.vehicleRules.find((item) => item.tipo === state.vehicle.type)?.limiteAreaM2,
+          }
         : {}),
     },
     ciente: state.acknowledgement,

@@ -13,6 +13,7 @@ import {
 import { createInitialState } from "./state.js";
 import { PROCESS_TYPES } from "./constants.js";
 import { buildNewProcessPayload } from "./payloads.js";
+import { recoverAreaAnswerIfRuleChanged, resetAreaAnswerIfRuleChanged } from "./areaRuleChange.js";
 import {
   clearPendingNewProcessSubmission, downloadReceipt, fetchPublicVehicleRules,
   hasPendingNewProcessSubmission, recoverNewProcessSubmission, submitNewProcess, submitRequirementResponse,
@@ -163,6 +164,9 @@ async function submit() {
       ? await submitRequirementResponse(state)
       : await submitNewProcess(state);
   } catch (error) {
+    if (resetAreaAnswerIfRuleChanged(error, state, clearPendingNewProcessSubmission, loadVehicleRules)) {
+      currentStep = "vehicle";
+    }
     recoveryPending = hasPendingNewProcessSubmission();
     submitError =
       error?.message ||
@@ -182,7 +186,16 @@ async function recoverSubmission() {
     success = await recoverNewProcessSubmission();
     recoveryPending = false;
   } catch (error) {
-    submitError = error?.message || "Não foi possível concluir o envio. Tente novamente.";
+    const ruleChange = recoverAreaAnswerIfRuleChanged(
+      error, state, clearPendingNewProcessSubmission, loadVehicleRules,
+    );
+    if (ruleChange) {
+      recoveryPending = false;
+      currentStep = ruleChange.step;
+      submitError = ruleChange.message;
+    } else {
+      submitError = error?.message || "Não foi possível concluir o envio. Tente novamente.";
+    }
   } finally {
     isSubmitting = false;
     render();
